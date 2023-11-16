@@ -9,12 +9,13 @@ namespace lightwave
             surf.position = position;
 
             // map the position from [-1,-1,0]..[+1,+1,0] to [0,0]..[1,1] by discarding the z component and rescaling
-            surf.uv.x() = (position.x() + 1) / 2;
-            surf.uv.y() = (position.y() + 1) / 2;
-            surf.frame.normal = (position - Point(0., 0., 0.)).normalized();
-
-            surf.frame.tangent = surf.frame.normal.cross(Vector(0, 1, 0));
-            surf.frame.bitangent = surf.frame.tangent.cross(surf.frame.normal);
+            auto theta = atan2(position.y(), position.x());
+            auto phi = acos(position.z());
+            surf.uv.x() = theta/2*Pi ;
+            surf.uv.y() = phi/Pi;
+            Vector normal = (position - Point(0., 0., 0.)).normalized();
+            surf.frame = Frame(normal);
+            
             // since we sample the area uniformly, the pdf is given by 1/surfaceArea
             surf.pdf = 0;
         }
