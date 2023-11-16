@@ -35,7 +35,7 @@ namespace lightwave
             discriminant = b * b - 4 * a * c;
             // logger(EDebug, "hitpoint rn at %.2f", its.t);
             float t0, t1;
-            if (discriminant < 0) //no real solution if Disc<0
+            if (discriminant < 0) // no real solution if Disc<0
                 return false;
             else if (discriminant == 0)
                 t0 = t1 = -0.5 * b / a;
@@ -45,7 +45,7 @@ namespace lightwave
                 t0 = q / a;
                 t1 = c / q;
             }
-            if (t0 < Epsilon) //self intersection check
+            if (t0 < Epsilon) // self intersection check
                 return false;
             if (t0 > t1)
             {
@@ -59,10 +59,12 @@ namespace lightwave
                 if (t0 < 0)
                     return false; // both t0 and t1 are negative
             }
+            if (t0 > its.t) 
+                return false;
 
             its.t = t0;
             // logger(EDebug, "hitpoint rn at %.2f", its.t);
-            
+
             Point position = ray(its.t);
             populate(its, position);
             return true;

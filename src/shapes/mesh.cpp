@@ -77,9 +77,12 @@ namespace lightwave
                 return false;
 
             Vector hitPoint = (1 - u - v) * v0 + u * v1 + v * v2;
-            float  t = Q.dot(edge2) * denom;
+            float t = Q.dot(edge2) * denom;
 
-            if (t> its.t){
+            // we take the closest t, and if the ray intersects a triangle behind the one we just did, then its
+            // not visible to the camera
+            if (t > its.t)
+            {
                 return false;
             }
             if ((Vector(ray.origin) - hitPoint).length() < Epsilon)
