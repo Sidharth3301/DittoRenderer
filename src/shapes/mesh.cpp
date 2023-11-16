@@ -77,13 +77,16 @@ namespace lightwave
                 return false;
 
             Vector hitPoint = (1 - u - v) * v0 + u * v1 + v * v2;
+            float  t = Q.dot(edge2) * denom;
 
+            if (t> its.t){
+                return false;
+            }
             if ((Vector(ray.origin) - hitPoint).length() < Epsilon)
             { // self intersection check
                 return false;
             }
-            its.t = Q.dot(edge2) * denom;
-
+            its.t = t;
             // populate(its, ray(its.t));
             Vector2 bary{u, v};
             if (m_smoothNormals == true)
