@@ -15,7 +15,6 @@ namespace lightwave {
 class Perspective : public Camera {
     private:
     Vector origin;
-    Vector focal;
     float scale_x;
     float scale_y;
     string fovAxis;
@@ -23,6 +22,7 @@ public:
     Perspective(const Properties &properties)
     : Camera(properties) {
         // NOT_IMPLEMENTED
+        origin = Vector(0.f, 0.f, 0.f);
         float fov = properties.get<float>("fov");
         fovAxis = properties.get<string>("fovAxis");
         
@@ -47,7 +47,7 @@ public:
 
     CameraSample sample(const Point2 &normalized, Sampler &rng) const override 
         // NOT_IMPLEMENTED
-       {    Ray ray = Ray(Vector(0.f,0.f,0.f), Vector(normalized.x()*scale_x, normalized.y()*scale_y, 1.f));
+       {    Ray ray = Ray(origin, Vector(normalized.x()*scale_x, normalized.y()*scale_y, 1.f));
             
             return CameraSample{
                 .ray = m_transform->apply(ray.normalized()),
