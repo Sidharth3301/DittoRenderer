@@ -14,7 +14,7 @@ namespace lightwave
             surf.frame.normal = (position - Point(0., 0., 0.)).normalized();
 
             surf.frame.tangent = surf.frame.normal.cross(Vector(0, 1, 0));
-            surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent);
+            surf.frame.bitangent = surf.frame.tangent.cross(surf.frame.normal);
             // since we sample the area uniformly, the pdf is given by 1/surfaceArea
             surf.pdf = 0;
         }
@@ -33,9 +33,9 @@ namespace lightwave
             auto c = o.dot(o) - 1.f;
 
             discriminant = b * b - 4 * a * c;
-            logger(EDebug, "hitpoint rn at %.2f", its.t);
+            // logger(EDebug, "hitpoint rn at %.2f", its.t);
             float t0, t1;
-            if (discriminant < 0)
+            if (discriminant < 0) //no real solution if Disc<0
                 return false;
             else if (discriminant == 0)
                 t0 = t1 = -0.5 * b / a;
@@ -45,7 +45,7 @@ namespace lightwave
                 t0 = q / a;
                 t1 = c / q;
             }
-            if (t0 < Epsilon)
+            if (t0 < Epsilon) //self intersection check
                 return false;
             if (t0 > t1)
             {
@@ -61,7 +61,7 @@ namespace lightwave
             }
 
             its.t = t0;
-            logger(EDebug, "hitpoint rn at %.2f", its.t);
+            // logger(EDebug, "hitpoint rn at %.2f", its.t);
             
             Point position = ray(its.t);
             populate(its, position);
