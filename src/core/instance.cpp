@@ -11,6 +11,19 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * if m_flipNormal is true, flip the direction of the bitangent (which in effect flips the normal)
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
+        surf.position = m_transform->apply(surf.position);
+        surf.frame.tangent= m_transform->apply(surf.frame.tangent).normalized();
+        Vector bitangent = m_transform->apply(surf.frame.bitangent);
+        float proj = surf.frame.tangent.dot(bitangent);
+
+        surf.frame.bitangent = (bitangent - proj * surf.frame.tangent).normalized();
+        if (m_flipNormal)
+        {
+            surf.frame.bitangent = -surf.frame.bitangent;
+        }
+
+        surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
+        
 }
 
 bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const {
@@ -22,21 +35,25 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         }
         return false;
     }
-
     const float previousT = its.t;
     Ray localRay;
-    NOT_IMPLEMENTED
+    
 
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
-
+    localRay = m_transform->inverse(worldRay);
+    float scaleNum = localRay.direction.length();
+    localRay.direction = localRay.direction.normalized();
+    its.t = its.t * scaleNum;
+    
     const bool wasIntersected = m_shape->intersect(localRay, its, rng);
     if (wasIntersected) {
         // hint: how does its.t need to change?
-
-        its.instance = this;
-        transformFrame(its);
+            its.instance = this;
+            transformFrame(its);
+            its.t = its.t / scaleNum;
+            // }
     } else {
         its.t = previousT;
     }

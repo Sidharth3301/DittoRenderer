@@ -96,14 +96,12 @@ namespace lightwave
             {
                 Vertex barycentric_normal = Vertex::interpolate(bary, A, B, C);
                 its.frame.normal = barycentric_normal.normal.normalized();
-                its.frame.tangent = its.frame.normal.cross(Vector(0, 1, 0)).normalized();
-                its.frame.bitangent = its.frame.tangent.cross(its.frame.normal).normalized();
+                its.frame = Frame(its.frame.normal);           
             }
             else
             {
                 its.frame.normal = N;
-                its.frame.tangent = its.frame.normal.cross(Vector(0, 1, 0)).normalized();
-                its.frame.bitangent = its.frame.tangent.cross(its.frame.normal).normalized();
+                its.frame = Frame(its.frame.normal);
             }
             return true;
         }
