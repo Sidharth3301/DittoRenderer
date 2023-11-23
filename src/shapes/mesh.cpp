@@ -63,8 +63,8 @@ namespace lightwave
             float det = P.dot(edge1);
             Vector N = edge1.cross(edge2).normalized();
             // for mesh inside to pass, yes we need backward facing intersections as well
-            if (fabs(det) < Epsilon)
-                return false;
+            if (fabs(det) < 1e-8) //for this we need a different epsilon than the self intersection which is quite loose
+                return false;     // inputs from tut on 23/11
             T = Vector(ray.origin) - v0;
             Q = T.cross(edge1);
 
@@ -125,7 +125,7 @@ namespace lightwave
             Vector v1 = (Vector)m_vertices[triangle[0]].position;
             Vector v2 = (Vector)m_vertices[triangle[1]].position;
             Vector v3 = (Vector)m_vertices[triangle[2]].position;
-            return Vector(v1 + v2 + v3 / 3.0);
+            return Vector((v1 + v2 + v3 )/ 3.0);
         }
 
     public:

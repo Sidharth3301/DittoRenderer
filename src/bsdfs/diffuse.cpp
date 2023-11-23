@@ -12,7 +12,10 @@ public:
 
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
-        NOT_IMPLEMENTED
+        BsdfSample b;
+        b.wi = squareToCosineHemisphere(uv)/(2*Pi);
+        b.weight = m_albedo->evaluate(uv)/(Pi)*Frame::cosTheta(wo);
+        return b;
     }
 
     std::string toString() const override {
