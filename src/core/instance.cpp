@@ -42,16 +42,17 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
+    //m_transform -> apply contains object - world
     localRay = m_transform->inverse(worldRay);
     float scaleNum = localRay.direction.length();
     localRay.direction = localRay.direction.normalized();
-    its.t = its.t * scaleNum;
+    its.t = its.t * scaleNum;  // its.t now contains the t in object space
     
     const bool wasIntersected = m_shape->intersect(localRay, its, rng);
     if (wasIntersected) {
         // hint: how does its.t need to change?
             its.instance = this;
-            transformFrame(its);
+            transformFrame(its); 
             its.t = its.t / scaleNum;
             // }
     } else {
