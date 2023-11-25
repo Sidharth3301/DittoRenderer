@@ -125,7 +125,7 @@ namespace lightwave
             Vector v1 = (Vector)m_vertices[triangle[0]].position;
             Vector v2 = (Vector)m_vertices[triangle[1]].position;
             Vector v3 = (Vector)m_vertices[triangle[2]].position;
-            return Vector((v1 + v2 + v3 )/ 3.0);
+            return Vector((v1 + v2 + v3)/ 3.0);
         }
 
     public:
