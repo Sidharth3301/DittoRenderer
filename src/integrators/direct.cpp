@@ -34,9 +34,9 @@ namespace lightwave
          */
         Color Li(const Ray &ray, Sampler &rng) override
         {
-            Color weight = Color(1);
+            Color weight = Color(1.0f);
             Intersection first_its = m_scene->intersect(ray, rng);
-            if (first_its.t != Infinity)
+            if (first_its)
             {
                 // one bounce
                 BsdfSample b1 = first_its.sampleBsdf(rng);
@@ -47,12 +47,7 @@ namespace lightwave
                 // second bounce
 
                 Intersection second_its = m_scene->intersect(newray, rng);
-                if (second_its.t != Infinity)
-                {
-                    BsdfSample b2 = second_its.sampleBsdf(rng);
-                    weight *= b2.weight;
-                }
-                else
+                if (!second_its)
                 {
                     weight *= m_scene->evaluateBackground(second_its.wo).value;
                 }
