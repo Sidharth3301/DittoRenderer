@@ -14,7 +14,7 @@ public:
                       Sampler &rng) const override {
         BsdfSample b;
         b.wi = squareToCosineHemisphere(rng.next2D());
-        b.weight = m_albedo->evaluate(uv)/Pi;
+        b.weight = Frame::cosTheta(b.wi)*(m_albedo->evaluate(uv)/Pi)/cosineHemispherePdf(b.wi);
         return b;
     }
 

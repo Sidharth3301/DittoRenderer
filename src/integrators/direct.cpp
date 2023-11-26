@@ -51,7 +51,6 @@ namespace lightwave
             else{
                 weight = m_scene->evaluateBackground(-1*ray.direction).value;
             }
-            
             return weight;
         }
 
