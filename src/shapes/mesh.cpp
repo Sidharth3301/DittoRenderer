@@ -103,6 +103,8 @@ namespace lightwave
                 its.frame.normal = N;
                 its.frame = Frame(its.frame.normal);
             }
+            its.uv.x() = u;
+            its.uv.y() = v;
             return true;
         }
 

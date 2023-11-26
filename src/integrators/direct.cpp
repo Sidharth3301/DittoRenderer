@@ -40,23 +40,18 @@ namespace lightwave
             {
                 // one bounce
                 BsdfSample b1 = first_its.sampleBsdf(rng);
-                Vector wi = b1.wi;
-                Ray newray = Ray(ray(first_its.t), wi).normalized();
+                Ray newray = Ray(ray(first_its.t), b1.wi).normalized();
                 weight *= b1.weight;
-
-                // second bounce
-
                 Intersection second_its = m_scene->intersect(newray, rng);
                 if (!second_its)
                 {
-                    weight *= m_scene->evaluateBackground(second_its.wo).value;
+                    weight *= m_scene->evaluateBackground(-1*newray.direction).value;
                 }
             }
-            else
-            {
-                weight *= m_scene->evaluateBackground(first_its.wo).value;
+            else{
+                weight = m_scene->evaluateBackground(-1*ray.direction).value;
             }
-
+            
             return weight;
         }
 
