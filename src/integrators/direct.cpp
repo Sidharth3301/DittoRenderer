@@ -14,11 +14,11 @@ namespace lightwave
         float m_gridFrequency;
 
         bool remap;
-        
 
     public:
         DirectIntegrator(const Properties &properties)
-            : SamplingIntegrator(properties){
+            : SamplingIntegrator(properties)
+        {
             // to parse properties from the scene description, use properties.get(name, default_value)
             // you can also omit the default value if you want to require the user to specify a value
 
@@ -41,15 +41,31 @@ namespace lightwave
                 // one bounce
                 BsdfSample b1 = first_its.sampleBsdf(rng);
                 Ray newray = Ray(ray(first_its.t), b1.wi).normalized();
-                weight *= b1.weight;
-                Intersection second_its = m_scene->intersect(newray, rng);
-                if (!second_its)
+                // logger(EInfo, "instance type %s", first_its.instance->toString());
+                if (first_its.instance->emission() != nullptr)
                 {
-                    weight *= m_scene->evaluateBackground(-1*newray.direction).value;
+                logger(EInfo, "instance type %s", first_its.instance->toString());
+
+                    weight *= first_its.evaluateEmission();
+                }
+                else
+                {
+                    weight *= b1.weight;
+                }
+                // weight *= b1.weight;
+                Intersection second_its = m_scene->intersect(newray, rng);
+                if (second_its)
+                {
+                    weight *= 0;
+                }
+                else
+                {
+                    weight *= m_scene->evaluateBackground(-1 * newray.direction).value;
                 }
             }
-            else{
-                weight = m_scene->evaluateBackground(-1*ray.direction).value;
+            else
+            {
+                weight *= m_scene->evaluateBackground(-1 * ray.direction).value;
             }
             return weight;
         }
