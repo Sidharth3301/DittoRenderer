@@ -35,37 +35,37 @@ namespace lightwave
         Color Li(const Ray &ray, Sampler &rng) override
         {
             Color weight = Color(1.0f);
+            int flag= 0;
             Intersection first_its = m_scene->intersect(ray, rng);
             if (first_its)
             {
-                // one bounce
-                BsdfSample b1 = first_its.sampleBsdf(rng);
-                Ray newray = Ray(ray(first_its.t), b1.wi).normalized();
-                // logger(EInfo, "instance type %s", first_its.instance->toString());
-                if (first_its.instance->emission() != nullptr)
-                {
-                logger(EInfo, "instance type %s", first_its.instance->toString());
+                Vector newdir;
+                BsdfSample b = first_its.sampleBsdf(rng);
+                if (b.isInvalid())
+                    newdir = squareToCosineHemisphere(rng.next2D()).normalized();
+                else
+                    newdir = b.wi;
 
-                    weight *= first_its.evaluateEmission();
-                }
+                if (first_its.instance->emission() != nullptr)
+                   { weight = first_its.evaluateEmission(); flag = 1; logger(EInfo,"colours %f,%f", weight.r(), weight.g());}
                 else
-                {
-                    weight *= b1.weight;
-                }
-                // weight *= b1.weight;
-                Intersection second_its = m_scene->intersect(newray, rng);
-                if (second_its)
-                {
-                    weight *= 0;
-                }
-                else
-                {
-                    weight *= m_scene->evaluateBackground(-1 * newray.direction).value;
+                    {weight *= b.weight;}
+
+                Ray shadow_ray{first_its.position, newdir};
+                Intersection second_its = m_scene->intersect(shadow_ray, rng);
+
+                if (!second_its)
+                    return weight*m_scene->evaluateBackground(shadow_ray.direction).value;
+                else {
+                    Color c = second_its.evaluateEmission();
+                    if (flag==1)
+                         logger(EInfo,"colour of the second int %f, %f",c.r(), c.g());
+                    return c;
                 }
             }
-            else
-            {
-                weight *= m_scene->evaluateBackground(-1 * ray.direction).value;
+            else{
+                    weight *= m_scene->evaluateBackground(ray.direction).value;
+
             }
             return weight;
         }

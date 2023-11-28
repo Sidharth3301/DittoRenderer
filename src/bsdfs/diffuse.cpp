@@ -13,7 +13,7 @@ public:
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
         BsdfSample b;
-        b.wi = squareToCosineHemisphere(rng.next2D());
+        b.wi = squareToCosineHemisphere(rng.next2D()).normalized();
         b.weight = Frame::cosTheta(b.wi)*m_albedo->evaluate(uv)/(Pi*cosineHemispherePdf(b.wi)+Epsilon);
         return b;
     }

@@ -46,8 +46,7 @@ namespace lightwave
                 t0 = q / a;
                 t1 = c / q;
             }
-            if (t0 < Epsilon) // self intersection check
-                return false;
+            
             if (t0 > t1)
             {
                 float tmp = t0;
@@ -63,9 +62,13 @@ namespace lightwave
             if (t0 > its.t) 
                 return false;
 
+            if (t0 < Epsilon) // self intersection check
+                return false;
+            // if (t0 < 0.1)
+            // {
+            //     logger(EInfo, "very close intersection in sphere %f", t0);
+            // }
             its.t = t0;
-            // logger(EDebug, "hitpoint rn at %.2f", its.t);
-
             Point position = ray(its.t);
             populate(its, position);
             return true;

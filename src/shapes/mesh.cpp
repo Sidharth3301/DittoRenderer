@@ -85,11 +85,12 @@ namespace lightwave
             {
                 return false;
             }
-            if ((Vector(ray.origin) - hitPoint).length() < Epsilon)
+            if ( t < Epsilon)
             { // self intersection check
                 return false;
             }
             its.t = t;
+            its.position = ray(its.t);
             // populate(its, ray(its.t));
             Vector2 bary{u, v};
             if (m_smoothNormals == true)
