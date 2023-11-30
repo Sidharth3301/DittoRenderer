@@ -57,10 +57,7 @@ namespace lightwave
                 if (!second_its)
                     return weight*m_scene->evaluateBackground(shadow_ray.direction).value;
                 else {
-                    Color c = second_its.evaluateEmission();
-                    if (flag==1)
-                         logger(EInfo,"colour of the second int %f, %f",c.r(), c.g());
-                    return c;
+                    return second_its.evaluateEmission();
                 }
             }
             else{
