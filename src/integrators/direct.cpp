@@ -34,37 +34,39 @@ namespace lightwave
          */
         Color Li(const Ray &ray, Sampler &rng) override
         {
+            Color color = Color(0.0f);
             Color weight = Color(1.0f);
-            int flag= 0;
+
             Intersection first_its = m_scene->intersect(ray, rng);
-            if (first_its)
+            if (!first_its)
             {
-                Vector newdir;
+                return m_scene->evaluateBackground(ray.direction).value;
+            }
+            else
+            {
                 BsdfSample b = first_its.sampleBsdf(rng);
+                color += first_its.evaluateEmission();
                 if (b.isInvalid())
-                    newdir = squareToCosineHemisphere(rng.next2D()).normalized();
-                else
-                    newdir = b.wi;
-
-                if (first_its.instance->emission() != nullptr)
-                   { weight = first_its.evaluateEmission(); flag = 1; logger(EInfo,"colours %f,%f", weight.r(), weight.g());}
-                else
-                    {weight *= b.weight;}
-
-                Ray shadow_ray{first_its.position, newdir};
-                Intersection second_its = m_scene->intersect(shadow_ray, rng);
-
+                {
+                    return color;
+                }
+                weight *= b.weight;
+                Ray second_ray{first_its.position, b.wi};
+                Intersection second_its = m_scene->intersect(second_ray, rng);
                 if (!second_its)
-                    return weight*m_scene->evaluateBackground(shadow_ray.direction).value;
-                else {
-                    return second_its.evaluateEmission();
+                {
+                    color += m_scene->evaluateBackground(second_ray.direction).value;
+                }
+                else
+                {
+                    color += second_its.evaluateEmission();
+                    if (b.isInvalid())
+                    {
+                        return color;
+                    }
                 }
             }
-            else{
-                    weight *= m_scene->evaluateBackground(ray.direction).value;
-
-            }
-            return weight;
+            return color * weight;
         }
 
         /// @brief An optional textual representation of this class, which can be useful for debugging.

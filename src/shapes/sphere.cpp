@@ -8,11 +8,10 @@ namespace lightwave
         {
             surf.position = position;
 
-            // map the position from [-1,-1,0]..[+1,+1,0] to [0,0]..[1,1] by discarding the z component and rescaling
-            auto theta = atan2(position.y(), position.x());
-            auto phi = acos(position.z());
-            surf.uv.x() = theta/2*Pi ;
-            surf.uv.y() = phi/Pi;
+            float theta = atan2f(position.x(),position.z());
+            float phi = acosf(position.y());
+            surf.uv.x() = (theta+Pi)/(2*Pi);
+            surf.uv.y() = (phi)/Pi;
             Vector normal = (position - Point(0., 0., 0.)).normalized();
             surf.frame = Frame(normal);
             
@@ -62,7 +61,7 @@ namespace lightwave
             if (t0 > its.t) 
                 return false;
 
-            if (t0 < Epsilon) // self intersection check
+            if (t0 < 1e-4f) // self intersection check
                 return false;
             // if (t0 < 0.1)
             // {
