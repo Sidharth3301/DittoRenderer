@@ -51,9 +51,14 @@ namespace lightwave
             Vertex A = m_vertices[triangle[0]];
             Vertex B = m_vertices[triangle[1]];
             Vertex C = m_vertices[triangle[2]];
+            
             Vector v0 = (Vector)A.position;
             Vector v1 = (Vector)B.position;
             Vector v2 = (Vector)C.position;
+
+            Vector2 v0t = A.texcoords;
+            Vector2 v1t = B.texcoords;
+            Vector2 v2t = C.texcoords;
 
             Vector edge1, edge2, T, P, Q;
             // following scratchpixel
@@ -63,7 +68,7 @@ namespace lightwave
             float det = P.dot(edge1);
             Vector N = edge1.cross(edge2).normalized();
             // for mesh inside to pass, yes we need backward facing intersections as well
-            if (fabs(det) < 1e-8) //for this we need a different epsilon than the self intersection which is quite loose
+            if (fabs(det) < 1e-8) // for this we need a different epsilon than the self intersection which is quite loose
                 return false;     // inputs from tut on 23/11
             T = Vector(ray.origin) - v0;
             Q = T.cross(edge1);
@@ -85,7 +90,7 @@ namespace lightwave
             {
                 return false;
             }
-            if ( t < Epsilon)
+            if ((Vector(ray.origin) - hitPoint).length() < 1e-4f)
             { // self intersection check
                 return false;
             }
@@ -97,15 +102,15 @@ namespace lightwave
             {
                 Vertex barycentric_normal = Vertex::interpolate(bary, A, B, C);
                 its.frame.normal = barycentric_normal.normal.normalized();
-                its.frame = Frame(its.frame.normal);           
+                its.frame = Frame(its.frame.normal);
             }
             else
             {
-                its.frame.normal = N;
+                its.frame.normal = N.normalized();
                 its.frame = Frame(its.frame.normal);
             }
-            its.uv.x() = u;
-            its.uv.y() = v;
+            its.uv = Point2((1-u-v)*v0t + u*v1t+ v*v2t);
+
             return true;
         }
 
@@ -128,7 +133,7 @@ namespace lightwave
             Vector v1 = (Vector)m_vertices[triangle[0]].position;
             Vector v2 = (Vector)m_vertices[triangle[1]].position;
             Vector v3 = (Vector)m_vertices[triangle[2]].position;
-            return Vector((v1 + v2 + v3)/ 3.0);
+            return Vector((v1 + v2 + v3) / 3.0);
         }
 
     public:
