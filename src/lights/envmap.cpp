@@ -41,7 +41,7 @@ namespace lightwave
             phi -= Pi;
 
             warped.y() = theta / Pi;
-            warped.x() = (phi + Pi) / (2 * Pi);
+            warped.x() = 0.5- ((phi+Pi) / (2 * Pi));
             // warped.y() = 1- warped.y();
             return {
                 .value = m_texture->evaluate(warped),
