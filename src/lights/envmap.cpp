@@ -26,20 +26,23 @@ namespace lightwave
             // coordinates }
             // * find the corresponding pixel coordinate for the given local
             // direction
-            auto local_dir = m_transform->inverse(direction);
+            //
+            auto local_dir = direction;
             if (m_transform)
             {
-                auto x = local_dir.x();
-                auto y = local_dir.y();
-                auto z = local_dir.z();
-                float phi, theta;
-                theta = atan2(sqrt(std::pow(x, 2) + std::pow(z, 2)), y);
-                phi = atan2(z, x);
-                phi -= Pi;
-
-                warped.x() = theta / Pi;
-                warped.y() = (phi + Pi) / (2 * Pi);
+                local_dir = m_transform->inverse(direction).normalized();
             }
+            auto x = local_dir.x();
+            auto y = local_dir.y();
+            auto z = local_dir.z();
+            float phi, theta;
+            theta = atan2(sqrt(std::pow(x, 2) + std::pow(z, 2)), y);
+            phi = atan2(z, x);
+            phi -= Pi;
+
+            warped.y() = theta / Pi;
+            warped.x() = (phi + Pi) / (2 * Pi);
+            // warped.y() = 1- warped.y();
             return {
                 .value = m_texture->evaluate(warped),
             };
