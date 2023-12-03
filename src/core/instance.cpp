@@ -32,8 +32,10 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         Ray localRay = worldRay;
         if (m_shape->intersect(localRay, its, rng)) {
             its.instance = this;
+            return true;
+        } else {
+            return false;
         }
-        return false;
     }
     const float previousT = its.t;
     Ray localRay;
@@ -42,23 +44,24 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
+    //m_transform -> apply contains object - world
     localRay = m_transform->inverse(worldRay);
     float scaleNum = localRay.direction.length();
     localRay.direction = localRay.direction.normalized();
-    its.t = its.t * scaleNum;
+    its.t = its.t * scaleNum;  // its.t now contains the t in object space
     
     const bool wasIntersected = m_shape->intersect(localRay, its, rng);
     if (wasIntersected) {
         // hint: how does its.t need to change?
-            its.instance = this;
-            transformFrame(its);
-            its.t = its.t / scaleNum;
-            // }
+
+        its.instance = this;
+        transformFrame(its);
+        its.t = its.t / scaleNum;
+        return true;
     } else {
         its.t = previousT;
+        return false;
     }
-
-    return false;
 }
 
 Bounds Instance::getBoundingBox() const {

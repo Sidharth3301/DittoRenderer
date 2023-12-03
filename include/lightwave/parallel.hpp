@@ -14,7 +14,7 @@
 #ifdef LW_DEBUG
 // if you feel uncomfortable debugging multi-threaded code, feel free to enable
 // this define and compile in Debug mode
-// #define SINGLE_THREADED
+#define SINGLE_THREADED
 #endif
 
 namespace lightwave {
