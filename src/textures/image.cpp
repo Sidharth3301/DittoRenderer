@@ -60,19 +60,17 @@ namespace lightwave
             int im_width = m_image->resolution()[1];
             Color c;
 
-            auto y = (1 - u) * im_height;
-            auto x = v * im_width;
+            // texture coords
+            auto y = u * im_height;
+            auto x = (1 - v) * im_width; // inverting the v axis
 
             auto fx = x - floorf(x);
             auto fy = y - floorf(y);
 
-            auto int_cord = Point2i(floorf(y), floorf(x));
+            auto int_cord = Point2i(floorf(y), floorf(x)); //[column,row] convention
             auto frac_cord = Point2(fy, fx);
 
             Point2i lat_cord = bordermodes(int_cord, im_res);
-
-            // logger(EInfo, "bordermode test for coord ");
-            // border_test(im_res);
 
             switch (m_filter)
             {
@@ -85,6 +83,7 @@ namespace lightwave
             }
             case FilterMode::Bilinear:
             {
+                // logger(EInfo,"inside bilinear");
                 auto fu = frac_cord[0];
                 auto fv = frac_cord[1];
                 Point2i p1 = lat_cord;
@@ -94,7 +93,7 @@ namespace lightwave
 
                 c = (1 - fu) * (1 - fv) * (*m_image)(p1) + (1 - fu) * (fv) * (*m_image)(p2) +
                     fu * (1 - fv) * (*m_image)(p3) + fu * fv * (*m_image)(p4);
-                    break;
+                break;
             }
             }
             return c;
@@ -110,43 +109,21 @@ namespace lightwave
             {
             case BorderMode::Clamp:
             {
-                new_lat_cords[1] = lat_coords[1] < 0 ? 0 : (lat_coords[1]> (im_width - 1) ? (im_width - 1) : lat_coords[1]);
+                new_lat_cords[1] = lat_coords[1] < 0 ? 0 : (lat_coords[1] > (im_width - 1) ? (im_width - 1) : lat_coords[1]);
                 new_lat_cords[0] = lat_coords[0] < 0 ? 0 : (lat_coords[0] > (im_height - 1) ? (im_height - 1) : lat_coords[0]);
                 break;
             }
             case BorderMode::Repeat:
+
             {
-                new_lat_cords[1] = lat_coords[1] < 0 ? (im_width - 1) : (lat_coords[1] > (im_width - 1) ? 0 : lat_coords[1]);
-                new_lat_cords[0] = lat_coords[0] < 0 ? (im_height - 1) : (lat_coords[0] > (im_height - 1) ? 0 : lat_coords[0]);
+                new_lat_cords[1] = lat_coords[1] % im_width;  // < 0 ? (im_width - 1) : (lat_coords[1] > (im_width - 1) ? 0 : lat_coords[1]);
+                new_lat_cords[0] = lat_coords[0] % im_height; //< 0 ? (im_height - 1) : (lat_coords[0] > (im_height - 1) ? 0 : lat_coords[0]);
                 break;
             }
             }
 
-
             return new_lat_cords;
         }
-        // Point2i border_test(Point2i& input, Point2i& im_res){
-        //     return bordermodes(input, im_res);
-        // }
-        // void border_test_input(Point2i& im_res){
-        //     int im_height = im_res[0];
-        //     int im_width = im_res[1];
-
-        //     logger(EInfo, "border_test for +1,+1");
-
-        // }
-
-        // Color bilinear_interp(Point2i &int_cord, Point2 &frac_cord, Point2i &im_res) const
-        // {
-        //     auto fu = frac_cord[0];
-        //     auto fv = frac_cord[1];
-        //     auto p1 = int_cord;
-        //     auto p2 = bordermodes(Point2i(int_cord.x(), int_cord.y() + 1), im_res);
-        //     auto p3 = bordermodes(Point2i(int_cord.x() + 1, int_cord.y()), im_res);
-        //     auto p4 = bordermodes(Point2i(int_cord.x() + 1, int_cord.y() + 1), im_res);
-
-        //     return (1 - fu) * (1 - fv) * (*m_image)(p1) + (1 - fu) * (fv) * (*m_image)(p2) + fu * (1 - fv) * (*m_image)(p3) + fu * fv * (*m_image)(p4);
-        // }
 
         std::string toString() const override
         {
