@@ -69,7 +69,7 @@ namespace lightwave
                     bordered_cord.y() = scaled_uv.y() < 0 ? 0 : (scaled_uv.y() > (im_res.y() - 1) ? (im_res.y() - 1) : scaled_uv.y());
                 }
                 else
-                {
+                {    //we use this so that even if scaled_uv is negative the modulus will work
                     bordered_cord.x() = scaled_uv.x() - floor(scaled_uv.x() / im_res.x()) * im_res.x();
                     bordered_cord.y() = scaled_uv.y() - floor(scaled_uv.y() / im_res.y()) * im_res.y();
                 }
