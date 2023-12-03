@@ -25,8 +25,8 @@ namespace lightwave
 
         Color evaluate(const Point2 &uv) const override
         {   
-            if (uv.x()<0 || uv.x()>1) logger(EInfo, "wronguv.x");
-            if (uv.y()<0 || uv.y()>1) logger(EInfo, "wronguv.y");
+            // if (uv.x()<0 || uv.x()>1) logger(EInfo, "wronguv.x");
+            // if (uv.y()<0 || uv.y()>1) logger(EInfo, "wronguv.y");
             int xTile = int(floorf(uv.x()*tilesize_x));
             int yTile = int(floorf(uv.y()*tilesize_y));
             int tileSum = xTile + yTile;

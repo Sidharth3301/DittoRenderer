@@ -52,77 +52,78 @@ namespace lightwave
 
         Color evaluate(const Point2 &uv) const override
         {
-            // Point2 modified_uv;
             auto u = uv.x();
-            auto v = uv.y();
-            auto im_res = m_image->resolution();
-            int im_height = m_image->resolution()[0];
-            int im_width = m_image->resolution()[1];
+            auto v = (1 - uv.y());
             Color c;
+            Point2i im_res = m_image->resolution();
 
-            // texture coords
-            auto y = u * im_height;
-            auto x = (1 - v) * im_width; // inverting the v axis
-
-            auto fx = x - floorf(x);
-            auto fy = y - floorf(y);
-
-            auto int_cord = Point2i(floorf(y), floorf(x)); //[column,row] convention
-            auto frac_cord = Point2(fy, fx);
-
-            Point2i lat_cord = bordermodes(int_cord, im_res);
-
-            switch (m_filter)
+            if (m_filter == FilterMode::Nearest)
             {
-            case FilterMode::Nearest:
-            {
-                lat_cord.x() = min(lat_cord.x(), im_height - 1);
-                lat_cord.y() = min(lat_cord.y(), im_width - 1);
-                c = (*m_image)(lat_cord);
-                break;
+                Point2 scaled_uv, bordered_cord;
+                scaled_uv.x() = u * im_res.x();
+                scaled_uv.y() = v * im_res.y();
+
+                if (m_border == BorderMode::Clamp)
+                {
+                    bordered_cord.x() = scaled_uv.x() < 0 ? 0 : (scaled_uv.x() > (im_res.x() - 1) ? (im_res.x() - 1) : scaled_uv.x());
+                    bordered_cord.y() = scaled_uv.y() < 0 ? 0 : (scaled_uv.y() > (im_res.y() - 1) ? (im_res.y() - 1) : scaled_uv.y());
+                }
+                else
+                {
+                    bordered_cord.x() = scaled_uv.x() - floor(scaled_uv.x() / im_res.x()) * im_res.x();
+                    bordered_cord.y() = scaled_uv.y() - floor(scaled_uv.y() / im_res.y()) * im_res.y();
+                }
+                Point2i lattice_uv;
+
+                lattice_uv.x() = min(floor(bordered_cord.x()), im_res.x() - 1);
+                lattice_uv.y() = min(floor(bordered_cord.y()), im_res.y() - 1);
+
+                c = (*m_image)(lattice_uv);
+                c *= m_exposure;
             }
-            case FilterMode::Bilinear:
+            else
             {
-                // logger(EInfo,"inside bilinear");
-                auto fu = frac_cord[0];
-                auto fv = frac_cord[1];
-                Point2i p1 = lat_cord;
-                auto p2 = bordermodes((lat_cord + Vector2i(0, 1)), im_res);
-                auto p3 = bordermodes((lat_cord + Vector2i(1, 0)), im_res);
-                auto p4 = bordermodes((lat_cord + Vector2i(1, 1)), im_res);
+                Point2 scaled_uv, bordered_cord;
+                scaled_uv.x() = u * im_res.x() - 0.5;
+                scaled_uv.y() = v * im_res.y() - 0.5;
 
-                c = (1 - fu) * (1 - fv) * (*m_image)(p1) + (1 - fu) * (fv) * (*m_image)(p2) +
-                    fu * (1 - fv) * (*m_image)(p3) + fu * fv * (*m_image)(p4);
-                break;
-            }
+                if (m_border == BorderMode::Clamp)
+                {
+                    bordered_cord.x() = scaled_uv.x() < 0 ? 0 : (scaled_uv.x() > (im_res.x() - 1) ? (im_res.x() - 1) : scaled_uv.x());
+                    bordered_cord.y() = scaled_uv.y() < 0 ? 0 : (scaled_uv.y() > (im_res.y() - 1) ? (im_res.y() - 1) : scaled_uv.y());
+                }
+                else
+                {
+                    bordered_cord.x() = scaled_uv.x() - floor(scaled_uv.x() / im_res.x()) * im_res.x();
+                    bordered_cord.y() = scaled_uv.y() - floor(scaled_uv.y() / im_res.y()) * im_res.y();
+                }
+
+                Point2i lattice_cord{int(floor(bordered_cord.x())), int(floor(bordered_cord.y()))};
+
+                float fu = bordered_cord.x() - lattice_cord.x();
+                float fv = bordered_cord.y() - lattice_cord.y();
+
+                int lu1 = lattice_cord.x() + 1;
+                int lv1 = lattice_cord.y() + 1;
+
+                if (m_border == BorderMode::Clamp)
+                {
+                    lu1 = lu1 < 0 ? 0 : (lu1 > (im_res.x() - 1) ? (im_res.x() - 1) : lu1);
+                    lv1 = lv1 < 0 ? 0 : (lv1 > (im_res.y() - 1) ? (im_res.y() - 1) : lv1);
+                }
+                else
+                {
+                    lu1 = lu1 - floor(lu1 / im_res.x()) * im_res.x();
+                    lv1 = lv1 - floor(lv1 / im_res.y()) * im_res.y();
+                }
+
+                c = (1 - fu) * (1 - fv) * (*m_image)(lattice_cord) +
+                    (1 - fu) * fv * (*m_image)(Point2i(lattice_cord.x(), lv1)) +
+                    fu * (1 - fv) * (*m_image)(Point2i(lu1, lattice_cord.y())) +
+                    fu * fv * (*m_image)(Point2i(lu1, lv1));
+                c *= m_exposure;
             }
             return c;
-        }
-
-        Point2i
-        bordermodes(const Point2i &lat_coords, const Point2i &im_res) const
-        {
-            Point2i new_lat_cords;
-            int im_height = im_res[0];
-            int im_width = im_res[1];
-            switch (m_border)
-            {
-            case BorderMode::Clamp:
-            {
-                new_lat_cords[1] = lat_coords[1] < 0 ? 0 : (lat_coords[1] > (im_width - 1) ? (im_width - 1) : lat_coords[1]);
-                new_lat_cords[0] = lat_coords[0] < 0 ? 0 : (lat_coords[0] > (im_height - 1) ? (im_height - 1) : lat_coords[0]);
-                break;
-            }
-            case BorderMode::Repeat:
-
-            {
-                new_lat_cords[1] = lat_coords[1] % im_width;  // < 0 ? (im_width - 1) : (lat_coords[1] > (im_width - 1) ? 0 : lat_coords[1]);
-                new_lat_cords[0] = lat_coords[0] % im_height; //< 0 ? (im_height - 1) : (lat_coords[0] > (im_height - 1) ? 0 : lat_coords[0]);
-                break;
-            }
-            }
-
-            return new_lat_cords;
         }
 
         std::string toString() const override

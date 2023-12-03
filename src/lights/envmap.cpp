@@ -22,6 +22,14 @@ public:
         // coordinates }
         // * find the corresponding pixel coordinate for the given local
         // direction
+        auto local_dir = m_transform->inverse(direction);
+        if (m_transform)
+        {
+            float phi = atan2f(local_dir.z(),local_dir.x())-Pi;
+            float theta = acosf(local_dir.y()/local_dir.length());
+            warped.x() = theta/Pi;
+            warped.y() = (phi+Pi)/(2*Pi);
+        }
         return {
             .value = m_texture->evaluate(warped),
         };
