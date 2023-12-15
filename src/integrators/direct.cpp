@@ -45,12 +45,31 @@ namespace lightwave
             else
             {
                 BsdfSample b = first_its.sampleBsdf(rng);
+
                 color += first_its.evaluateEmission();
                 if (b.isInvalid())
                 {
                     return color;
                 }
-                weight *= b.weight;
+                if (m_scene->hasLights())
+                {
+                    LightSample ls = m_scene->sampleLight(rng);
+                    if (!ls.light->canBeIntersected())
+                    {
+                        DirectLightSample dls = ls.light->sampleDirect(first_its.position, rng);
+
+                        Vector toLight = dls.wi; // Directional light's direction
+                        bool isVisible = m_scene->intersect(Ray(first_its.position, toLight), Infinity, rng);
+
+                        if (isVisible)
+                        { // Check if light direction is visible
+                            Color bsdfVal = first_its.evaluateBsdf(toLight).value;
+                            color += (bsdfVal*dls.weight/ls.probability);
+                            // weight *= dls.weight;
+                        }
+                    }
+                }
+                // weight *= b.weight;
                 Ray second_ray{first_its.position, b.wi};
                 Intersection second_its = m_scene->intersect(second_ray, rng);
                 if (!second_its)
