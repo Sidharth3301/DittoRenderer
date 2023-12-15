@@ -13,10 +13,11 @@ public:
     EmissionEval evaluate(const Point2 &uv, const Vector &wo) const override {
         if (Frame::cosTheta(wo)<0)
         {
-        return EmissionEval{.value = m_emission->evaluate(uv)};
+        return EmissionEval{.value = Color(0)};
+        
         }
         else
-        return EmissionEval{.value = Color(0)};
+        return EmissionEval{.value = m_emission->evaluate(uv)};
     }
 
     std::string toString() const override {
