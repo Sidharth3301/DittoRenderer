@@ -21,7 +21,7 @@ namespace lightwave
             DirectLightSample Li;
             Vector dir = pLight - origin;
             Li.wi = dir.normalized();
-            auto I = Power / (4 * Pi); //intensity = power/solid angle  
+            auto I = Power / (4*Pi); //intensity = power/solid angle  
             Li.weight = I / dir.lengthSquared();
             Li.distance = dir.length();
             return Li;
