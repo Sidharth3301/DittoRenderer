@@ -72,20 +72,17 @@ namespace lightwave
                 weight *= b.weight;
                 Ray second_ray{first_its.position, b.wi};
                 Intersection second_its = m_scene->intersect(second_ray, rng);
+                // BsdfSample sample2 = second_its.sampleBsdf(rng);
                 if (!second_its)
                 {
-                    color += m_scene->evaluateBackground(second_ray.direction).value;
+                    color += (m_scene->evaluateBackground(second_ray.direction).value * weight);
                 }
                 else
                 {
-                    color += second_its.evaluateEmission();
-                    if (b.isInvalid())
-                    {
-                        return color;
-                    }
+                    color += (second_its.evaluateEmission() * weight);
                 }
             }
-            return color * weight;
+            return color;
         }
 
         /// @brief An optional textual representation of this class, which can be useful for debugging.
