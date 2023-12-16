@@ -1,5 +1,5 @@
 #include <lightwave.hpp>
-
+#include <lightwave/math.hpp>
 namespace lightwave {
 
 class Conductor : public Bsdf {
@@ -15,12 +15,24 @@ public:
         // the probability of a light sample picking exactly the direction `wi'
         // that results from reflecting `wo' is zero, hence we can just ignore
         // that case and always return black
+        if(isReflection(wo, wi))
+            return BsdfEval{.value = m_reflectance->evaluate(uv)};
         return BsdfEval::invalid();
     }
 
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
-        NOT_IMPLEMENTED
+        BsdfSample b;
+        b.wi = reflect(wo,Vector(0,0,1)).normalized(); // Reflect the incoming vector
+        b.weight = m_reflectance->evaluate(uv) * Frame::cosTheta(b.wi);
+        return b;
+    }
+    bool isReflection(const Vector &wo, const Vector &wi) const {
+    // Assuming 'Frame' is a utility class that provides surface normal information
+        // Vector no = - wi + 2.f * wi.dot(Vector(0,0,1)) * Vector(0,0,1);
+        Vector normal = Vector(0,0,1); // Or another way to get the normal
+        Vector perfectReflection = reflect(wo, normal);
+        return (wi - perfectReflection).length() < 1e-8; // EPSILON is a small threshold value
     }
 
     std::string toString() const override {
