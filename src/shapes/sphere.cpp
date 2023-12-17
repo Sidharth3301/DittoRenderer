@@ -57,8 +57,8 @@ namespace lightwave
                     return false; // both t0 and t1 are negative
             }
 
-            // if (t0 > its.t)
-            //     return false;
+            if (t0 > its.t)
+                return false;
 
             its.t = t0;
             Point position = ray(its.t);
