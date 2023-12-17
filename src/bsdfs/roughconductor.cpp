@@ -42,9 +42,14 @@ namespace lightwave
             const auto alpha = std::max(float(1e-3), sqr(m_roughness->scalar(uv)));
             BsdfSample samp;
             auto mf_normal = microfacet::sampleGGXVNDF(alpha, wo, rng.next2D());
+            if (microfacet::pdfGGXVNDF(alpha, mf_normal, wo) < 0)
+            {
+                return BsdfSample::invalid();
+            }
             samp.wi = reflect(wo, mf_normal);
             auto sign = Frame::cosTheta(samp.wi) > 0 ? 1 : -1;
             samp.weight = m_reflectance->evaluate(uv) * microfacet::smithG1(alpha, mf_normal, samp.wi) * sign;
+
             return samp;
             // hints:
             // * do not forget to cancel out as many terms from your equations as possible!

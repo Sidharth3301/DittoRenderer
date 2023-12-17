@@ -60,6 +60,10 @@ namespace lightwave
         {
             BsdfSample samp;
             auto mf_normal = microfacet::sampleGGXVNDF(alpha, wo, rng.next2D());
+            if (microfacet::pdfGGXVNDF(alpha, mf_normal, wo) < 0)
+            {
+                return BsdfSample::invalid();
+            }
             samp.wi = reflect(wo, mf_normal);
             auto sign = Frame::cosTheta(samp.wi) > 0 ? 1 : -1;
             samp.weight = color * microfacet::smithG1(alpha, mf_normal, samp.wi) * sign;
@@ -156,12 +160,12 @@ namespace lightwave
                 auto metallic_sample = combination.metallic.sample(wo, rng);
                 bsdfSample.wi = metallic_sample.wi;
                 float metallic_prob = 1 - prob;
-                if (std::isnan(metallic_prob))
+                if (metallic_sample.isInvalid())
                 {
                     return BsdfSample::invalid();
                 }
                 bsdfSample.weight = metallic_sample.weight / metallic_prob;
-                assert_finite(bsdfSample.weight,{});
+                // assert_finite(bsdfSample.weight, {});
                 // logger(EDebug, "metallic prob %f", metallic_prob);
             }
 

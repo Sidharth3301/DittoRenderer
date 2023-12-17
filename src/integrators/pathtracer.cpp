@@ -15,7 +15,6 @@ namespace lightwave
 
         int depth;
 
-
     public:
         Pathtracer(const Properties &properties)
             : SamplingIntegrator(properties)
@@ -26,8 +25,7 @@ namespace lightwave
             m_showGrid = properties.get<bool>("grid", true);
             m_gridColor = properties.get<Color>("gridColor", Color::black());
             m_gridFrequency = properties.get<float>("gridFrequency", 10);
-            depth =properties.get<int>("depth", 2);
-            
+            depth = properties.get<int>("depth", 2);
         }
 
         /**
@@ -36,8 +34,50 @@ namespace lightwave
          */
         Color Li(const Ray &ray, Sampler &rng) override
         {
-            //iterative pathtracer
-            return Color(0);
+            Color color{0.0f};
+            Color weight{1.0f};
+            Ray curr_ray = ray;
+
+            while (curr_ray.depth <= depth)
+            {
+                Intersection its = m_scene->intersect(curr_ray, rng);
+                if (!its)
+                {
+                    color += m_scene->evaluateBackground(curr_ray.direction).value * weight;
+                    break;
+                }
+                else
+                {
+                    color += its.evaluateEmission()*weight;
+                    if (m_scene->hasLights())
+                    {
+                        LightSample ls = m_scene->sampleLight(rng);
+                        if (!ls.light->canBeIntersected())
+                        {
+                            DirectLightSample dls = ls.light->sampleDirect(its.position, rng);
+
+                            Vector toLight = dls.wi; // Directional light's direction
+                            bool isIntersecting = m_scene->intersect(Ray(its.position, toLight), dls.distance, rng);
+
+                            if (!isIntersecting)
+                            { // Check if light direction is visible
+                                Color bsdfVal = its.evaluateBsdf(toLight).value;
+                                color += (bsdfVal * dls.weight / ls.probability);
+                            }
+                        }
+                    }
+                    BsdfSample b = its.sampleBsdf(rng);
+                    if (b.isInvalid())
+                    {
+                        return color;
+                    }
+                    weight *= b.weight;
+                    curr_ray.origin = its.position;
+                    curr_ray.direction = b.wi;
+                    curr_ray.depth +=1;
+                }
+            }
+            return color;
         }
 
         /// @brief An optional textual representation of this class, which can be useful for debugging.
