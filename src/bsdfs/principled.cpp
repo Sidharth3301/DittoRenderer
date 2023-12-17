@@ -144,13 +144,25 @@ namespace lightwave
                 auto diffuse_sample = combination.diffuse.sample(wo, rng);
                 bsdfSample.wi = diffuse_sample.wi;
                 bsdfSample.weight = diffuse_sample.weight / prob;
+                if (std::isnan(prob))
+                {
+                    return BsdfSample::invalid();
+                }
+                // assert_finite(bsdfSample.weight, {});
             }
             else
             {
 
                 auto metallic_sample = combination.metallic.sample(wo, rng);
                 bsdfSample.wi = metallic_sample.wi;
-                bsdfSample.weight = metallic_sample.weight / (1.f - prob);
+                float metallic_prob = 1 - prob;
+                if (std::isnan(metallic_prob))
+                {
+                    return BsdfSample::invalid();
+                }
+                bsdfSample.weight = metallic_sample.weight / metallic_prob;
+                assert_finite(bsdfSample.weight,{});
+                // logger(EDebug, "metallic prob %f", metallic_prob);
             }
 
             return bsdfSample;
