@@ -1,0 +1,49 @@
+<scene id="scene">
+  <camera type="perspective">
+    <integer name="width" value="1920"/>
+    <integer name="height" value="1080"/>
+    <float name="fov" value="39.598"/>
+    <string name="fovAxis" value="x"/>
+    <transform>
+      <matrix value="0.68592,0.32401,-0.65156,7.3589,  0.72768,-0.30542,0.61417,-6.9258,  -4.0113e-09,-0.8954,-0.44527,4.9583,  0,0,0,1"/>
+    </transform>
+  </camera>
+  <instance>
+    <bsdf type="principled">
+      <texture name="baseColor" type="image" filename="textures/carpet 6.png"/>
+      <texture name="roughness" type="constant" value="0.5"/>
+      <texture name="metallic" type="constant" value="0"/>
+      <texture name="specular" type="constant" value="0.5"/>
+    </bsdf>
+    <shape type="mesh" filename="meshes/Plane.ply"/>
+    <transform>
+      <matrix value="10.53,0,0,-1.9015,  0,10.53,0,2.9324,  0,0,10.53,0,  0,0,0,1"/>
+    </transform>
+  </instance>
+  <instance>
+    <bsdf type="principled">
+      <texture name="baseColor" type="image" filename="textures/turtle2_TT_checker_2048x2048_UV_GRID_BaseColor.jpg"/>
+      <texture name="roughness" type="constant" value="0"/>
+      <texture name="metallic" type="constant" value="0"/>
+      <texture name="specular" type="constant" value="0.5"/>
+    </bsdf>
+    <texture name="normal" type="image" filename="textures/turtle2_TT_checker_2048x2048_UV_GRID_Normal.jpg" linear="true"/>
+    <shape type="mesh" filename="meshes/RetopoFlow.002.ply"/>
+    <transform>
+      <matrix value="0.42113,-2.2972,0,1.0525,  2.2972,0.42113,0,-0.69929,  0,0,2.3355,-0.04114,  0,0,0,1"/>
+    </transform>
+  </instance>
+  
+  <light type="point" position="4.0762,1.0055,5.9039" power="2533,2533,2533"/>
+  <light type="envmap">
+    <texture type="constant" value="0.050876,0.050876,0.050876"/>
+    <transform>
+      <matrix value="1,0,0,0,  0,0,1,0,  0,-1,0,0,  0,0,0,1"/>
+    </transform>
+  </light>
+</scene>
+<integrator type="direct" depth="3" nee="true" mis="true">
+  <ref id="scene"/>
+  <image id="noisy"/>
+  <sampler type="independent" count="64"/>
+</integrator>
