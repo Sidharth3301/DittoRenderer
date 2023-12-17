@@ -107,8 +107,12 @@ namespace lightwave
         const auto diffuseAlbedo = diffuseLobe.color.mean();
         const auto totalAlbedo =
             diffuseLobe.color.mean() + metallicLobe.color.mean();
+        const auto diffuseAlbedo = diffuseLobe.color.mean();
+        const auto totalAlbedo =
+            diffuseLobe.color.mean() + metallicLobe.color.mean();
         return {
             .diffuseSelectionProb =
+                totalAlbedo > 0 ? diffuseAlbedo / totalAlbedo : 1.0f,
                 totalAlbedo > 0 ? diffuseAlbedo / totalAlbedo : 1.0f,
             .diffuse  = diffuseLobe,
             .metallic = metallicLobe,
