@@ -44,8 +44,27 @@ namespace lightwave
             }
             else
             {
-                BsdfSample b = first_its.sampleBsdf(rng);
                 color += first_its.evaluateEmission();
+
+                if (m_scene->hasLights())
+                {
+                    LightSample ls = m_scene->sampleLight(rng);
+                    if (!ls.light->canBeIntersected())
+                    {
+                        DirectLightSample dls = ls.light->sampleDirect(first_its.position, rng);
+
+                        Vector toLight = dls.wi; // Directional light's direction
+                        bool isIntersecting = m_scene->intersect(Ray(first_its.position, toLight), dls.distance, rng);
+
+                        if (!isIntersecting)
+                        { // Check if light direction is visible
+                            Color bsdfVal = first_its.evaluateBsdf(toLight).value;
+                            color += (bsdfVal * dls.weight / ls.probability);
+                            // weight *= dls.weight;
+                        }
+                    }
+                }
+                BsdfSample b = first_its.sampleBsdf(rng);
                 if (b.isInvalid())
                 {
                     return color;
@@ -53,20 +72,17 @@ namespace lightwave
                 weight *= b.weight;
                 Ray second_ray{first_its.position, b.wi};
                 Intersection second_its = m_scene->intersect(second_ray, rng);
+                // BsdfSample sample2 = second_its.sampleBsdf(rng);
                 if (!second_its)
                 {
-                    color += m_scene->evaluateBackground(second_ray.direction).value;
+                    color += (m_scene->evaluateBackground(second_ray.direction).value * weight);
                 }
                 else
                 {
-                    color += second_its.evaluateEmission();
-                    if (b.isInvalid())
-                    {
-                        return color;
-                    }
+                    color += (second_its.evaluateEmission() * weight);
                 }
             }
-            return color * weight;
+            return color;
         }
 
         /// @brief An optional textual representation of this class, which can be useful for debugging.

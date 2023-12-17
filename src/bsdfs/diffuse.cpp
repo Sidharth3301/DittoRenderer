@@ -10,6 +10,11 @@ public:
         m_albedo = properties.get<Texture>("albedo");
     }
 
+    BsdfEval evaluate(const Point2 &uv, const Vector &wo,
+                      const Vector &wi) const override {
+        return BsdfEval{.value = (m_albedo->evaluate(uv)*Frame::cosTheta(wi))/Pi};
+    }
+
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
         BsdfSample b;
