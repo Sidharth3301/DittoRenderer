@@ -12,7 +12,7 @@ namespace lightwave
 
         BsdfEval evaluate(const Vector &wo, const Vector &wi) const
         {
-            return BsdfEval{.value = (color * Frame::cosTheta(wi)) / Pi};
+            return BsdfEval{.value = (color) / Pi};
 
             // hints:
             // * copy your diffuse bsdf evaluate here
