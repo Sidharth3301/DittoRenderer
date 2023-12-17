@@ -25,56 +25,31 @@ public:
 
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
-        Vector normal = Vector(0,0,1); // Obtain the correct surface normal
-        float ior = m_ior->evaluate(uv).g; // Assuming IOR is a single value texture
 
-        bool entering = Frame::cosTheta(wo) > 0;
-        float eta = entering ? 1/ ior : ior; // Adjust IOR based on ray direction
-
-        Vector reflectDir = reflect(wo, normal).normalized();
-        Vector refractDir;
-        float fresnelReflectance = fresnelDielectric(wo, normal, eta, refractDir);
+        float ior = m_ior->scalar(uv); // Assuming IOR is a single value texture
+        auto normal = Vector(0,0,1);
+        bool entering = Frame::cosTheta(wo) < 0;
+        float eta = entering ? (1/ ior) : ior; 
+        auto adj_normal = entering ? -1*normal: normal;// Adjust IOR based on ray direction
+        float cosThetaI = Frame::cosTheta(wo);
+        float fresnelReflectance = fresnelDielectric(cosThetaI, eta);
 
         BsdfSample bsdfSample;
-        if (rng.next() < fresnelReflectance || !refract(wo, normal, eta, refractDir)) {
+        if (rng.next() < fresnelReflectance){ 
             // Reflect
-            bsdfSample.wi = reflect(wo,Vector(0,0,1)).normalized();
+            bsdfSample.wi = reflect(wo,adj_normal).normalized();
             bsdfSample.weight = m_reflectance->evaluate(uv);
 
         } else {
             // Refract
-            bsdfSample.wi =reflect(wo,Vector(0,0,1)).normalized();
-            bsdfSample.weight = m_transmittance->evaluate(uv);
+            
+            bsdfSample.wi = refract(wo,adj_normal, eta).normalized();
+            bsdfSample.weight = m_transmittance->evaluate(uv)/(eta*eta);
         }
 
         return bsdfSample;
     }
-    bool refract(const Vector &wo, const Vector &normal, float eta, Vector &refractDir) const {
-        float cosThetaI = normal.dot(wo);
-        float sin2ThetaI = std::max(0.0f, 1.0f - cosThetaI * cosThetaI);
-        float sin2ThetaT = eta * eta * sin2ThetaI;
-
-        // Check for total internal reflection
-        if (sin2ThetaT >= 1.0f) return false;
-
-        float cosThetaT = std::sqrt(1.0f - sin2ThetaT);
-        refractDir = eta * -wo + (eta * cosThetaI - cosThetaT) * normal;
-        return true;
-    }
-    float fresnelDielectric(const Vector &wo, const Vector &normal, float eta, Vector &refractDir)  const {
-        float cosThetaI = normal.dot(wo);
-        float sin2ThetaI = std::max(0.0f, 1.0f - cosThetaI * cosThetaI);
-        float sin2ThetaT = eta * eta * sin2ThetaI;
-
-        // Total internal reflection
-        if (sin2ThetaT >= 1.0f) return 1.0f;
-
-        float cosThetaT = std::sqrt(1.0f - sin2ThetaT);
-
-        float rParl = ((eta * cosThetaI) - cosThetaT) / ((eta * cosThetaI) + cosThetaT);
-        float rPerp = (cosThetaI - (eta * cosThetaT)) / (cosThetaI + (eta * cosThetaT));
-        return 0.5f * (rParl * rParl + rPerp * rPerp);
-    }
+   
     std::string toString() const override {
         return tfm::format("Dielectric[\n"
                            "  ior           = %s,\n"
