@@ -50,7 +50,7 @@ namespace lightwave
                 t0 = t1;
                 t1 = tmp;
             }
-            if (t0 < 0)
+            if (t0 < 1e-4f)
             {
                 t0 = t1; // if t0 is negative, let's use t1 instead
                 if (t0 < 0 || t0 < 1e-4f)

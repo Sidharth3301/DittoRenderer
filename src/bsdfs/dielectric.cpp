@@ -31,7 +31,7 @@ public:
         bool entering = Frame::cosTheta(wo) < 0;
         float eta = entering ? (1/ ior) : ior; 
         auto adj_normal = entering ? -1*normal: normal;// Adjust IOR based on ray direction
-        float cosThetaI = Frame::cosTheta(wo);
+        float cosThetaI = Frame::cosTheta(wo); 
         float fresnelReflectance = fresnelDielectric(cosThetaI, eta);
 
         BsdfSample bsdfSample;

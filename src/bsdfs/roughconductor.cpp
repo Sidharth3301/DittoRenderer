@@ -30,7 +30,7 @@ namespace lightwave
             auto D = microfacet::evaluateGGX(alpha, mfacet_normal);
             auto Gwi = microfacet::smithG1(alpha, mfacet_normal, wi);
             auto Gwo = microfacet::smithG1(alpha, mfacet_normal, wo);
-            auto fr = reflectance * D * Gwi * Gwo / (4 * fabs(Frame::cosTheta(wi)) * fabs(Frame::cosTheta(wo)));
+            auto fr = reflectance * D * Gwi * Gwo / (4  * fabs(Frame::cosTheta(wo)));
             return BsdfEval{.value = fr};
             // hints:
             // * the microfacet normal can be computed from `wi' and `wo'

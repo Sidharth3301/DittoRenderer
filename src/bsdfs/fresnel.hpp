@@ -26,7 +26,7 @@ template <typename T> inline T schlick(T F0, float cosTheta) {
 
 /**
  * Unpolarized Fresnel term for dielectric materials.
- * @param cosThetaT Returns the cosine of the transmitted ray, or -1 in the case
+ * @param cosThetaT Returns the cosine of the transmitted ray, or 1 in the case
  * of total internal reflection.
  * @param eta The relative IOR (n2 / n1).
  */

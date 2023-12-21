@@ -38,7 +38,7 @@ namespace lightwave
             Color weight{1.0f};
             Ray curr_ray = ray;
 
-            while (curr_ray.depth <= depth)
+            while (true)
             {
                 Intersection its = m_scene->intersect(curr_ray, rng);
                 if (!its)
@@ -65,6 +65,9 @@ namespace lightwave
                                 color += (bsdfVal * dls.weight / ls.probability);
                             }
                         }
+                    }
+                    if (curr_ray.depth>=depth-1){
+                        return color;
                     }
                     BsdfSample b = its.sampleBsdf(rng);
                     if (b.isInvalid())
