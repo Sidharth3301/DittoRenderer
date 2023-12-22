@@ -1,26 +1,34 @@
 #include <lightwave/properties.hpp>
 #include <lightwave/registry.hpp>
 #include <lightwave/transform.hpp>
+#include <ctpl_stl.h>
 
-#include <istream>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <istream>
+#include <future>
+#include <memory>
 
 #include "parser.hpp"
 
+ctpl::thread_pool pool(2 * std::thread::hardware_concurrency());
+
 namespace lightwave {
 
-struct SceneParser::Node {
+struct SceneParser::Node : public std::enable_shared_from_this<SceneParser::Node> {
     ref<Node> parent;
+    XMLParser::SourceLocation location;
 
     Node(const ref<Node> &parent) : parent(parent) {}
 
-    virtual std::filesystem::path getFilePath() const { return parent->getFilePath(); }
+    virtual std::filesystem::path getFilePath() const {
+        return parent->getFilePath();
+    }
     virtual RootNode &getRoot() { return parent->getRoot(); }
 
     virtual void enter() {}
-    virtual void attribute(const std::string &name, const std::string &value) { }
-    virtual void addChild(const ref<Object> &object, const std::string &name) {
+    virtual void attribute(const std::string &name, const std::string &value) {}
+    virtual void addChild(const std::shared_future<ref<Object>> &object, const std::string &name) {
         lightwave_throw("children are not supported by this node");
     }
     virtual void close() {}
@@ -29,19 +37,21 @@ struct SceneParser::Node {
 };
 
 struct SceneParser::RootNode : public SceneParser::Node {
-    std::map<std::string, ref<Object>> namedObjects;
-    std::vector<ref<Object>> &objects;
+    std::map<std::string, std::shared_future<ref<Object>>> namedObjects;
+    std::vector<std::shared_future<ref<Object>>> objectFutures;
     std::filesystem::path filepath;
     SceneParser &sceneParser;
 
-    RootNode(std::vector<ref<Object>> &objects, const std::filesystem::path &filepath, SceneParser &sceneParser)
-    : Node(nullptr), objects(objects), filepath(filepath), sceneParser(sceneParser) {}
+    RootNode(std::vector<ref<Object>> &objects,
+             const std::filesystem::path &filepath, SceneParser &sceneParser)
+        : Node(nullptr), filepath(filepath),
+          sceneParser(sceneParser) {}
 
-    void nameObject(const std::string &name, const ref<Object> &object) {
+    void nameObject(const std::string &name, const std::shared_future<ref<Object>> &object) {
         namedObjects[name] = object;
     }
 
-    ref<Object> lookup(const std::string &name) {
+    const std::shared_future<ref<Object>> &lookup(const std::string &name) {
         auto it = namedObjects.find(name);
         if (it == namedObjects.end()) {
             lightwave_throw("could not find an object named \"%s\"", name);
@@ -49,14 +59,18 @@ struct SceneParser::RootNode : public SceneParser::Node {
         return it->second;
     }
 
-    std::filesystem::path getFilePath() const override {
-        return filepath;
-    }
+    std::filesystem::path getFilePath() const override { return filepath; }
 
     RootNode &getRoot() override { return *this; }
 
-    void addChild(const ref<Object> &object, const std::string &name) override {
-        objects.push_back(object);
+    void addChild(const std::shared_future<ref<Object>> &object, const std::string &name) override {
+        objectFutures.push_back(object);
+    }
+
+    void close() override {
+        for (const auto &object : objectFutures) {
+            sceneParser.m_objects.push_back(object.get());
+        }
     }
 };
 
@@ -67,10 +81,13 @@ struct SceneParser::ObjectNode : public SceneParser::Node {
     std::string id;
     Properties properties;
 
+    std::vector<std::pair<std::string, std::shared_future<ref<Object>>>> childFutures;
+
     ref<Transform> transform;
 
     ObjectNode(const std::string &tag, const ref<Node> &parent)
-    : Node(parent), tag(tag), properties(parent->getFilePath().remove_filename()) {}
+        : Node(parent), tag(tag),
+          properties(parent->getFilePath().remove_filename()) {}
 
     void attribute(const std::string &key, const std::string &value) override {
         if (key == "type") {
@@ -86,23 +103,44 @@ struct SceneParser::ObjectNode : public SceneParser::Node {
 
     void enter() override {
         if (tag == "transform") {
-            transform = std::static_pointer_cast<Transform>(Registry::create(tag, type, properties));
+            transform = std::static_pointer_cast<Transform>(
+                Registry::create(tag, type, properties));
         }
     }
 
-    void addChild(const ref<Object> &object, const std::string &child_name) override {
-        if (child_name == "") {
-            const bool needsQuery = id == "";
-            properties.addChild(object, needsQuery);
-        } else {
-            properties.set<Object>(child_name, object);
-        }
+    void addChild(const std::shared_future<ref<Object>> &object,
+                  const std::string &childName) override {
+        childFutures.push_back(std::make_pair(childName, object));
     }
 
     void close() override {
-        ref<Object> object = transform ? transform : Registry::create(tag, type, properties);
+        ProgressReporter &progress = getRoot().sceneParser.m_progress;
+        progress.update(0, 1);
+        
+        auto self = shared_from_this();
+        std::shared_future<ref<Object>> object = pool.push([this, self, &progress](int) {
+            // wait for all child objects to be constructed and add them to properties
+            for (const auto &child : childFutures) {
+                if (child.first == "") {
+                    const bool needsQuery = id == "";
+                    properties.addChild(child.second.get(), needsQuery);
+                } else {
+                    properties.set<Object>(child.first, child.second.get());
+                }
+            }
+
+            // construct final object
+            try {
+                auto object = transform ? transform : Registry::create(tag, type, properties);
+                if (id != "") object->setId(id);
+                progress += 1;
+                return object;
+            } catch (...) {
+                lightwave_throw_nested("defined in %s:%d:%d", location.filename,
+                                    location.line, location.column);
+            }
+        });
         if (id != "") {
-            object->setId(id);
             getRoot().nameObject(id, object);
         }
 
@@ -115,19 +153,23 @@ struct SceneParser::PrimitiveNode : public SceneParser::Node {
     std::string name;
     std::string value;
 
-    PrimitiveNode(const std::string &tag, const ref<Node> &parent) : Node(parent), tag(tag) {}
+    PrimitiveNode(const std::string &tag, const ref<Node> &parent)
+        : Node(parent), tag(tag) {}
 
     static bool supportsTag(const std::string &tag) {
-        return tag == "float" || tag == "string" || tag == "color" || tag == "boolean" || tag == "integer" || tag == "vector";
+        return tag == "float" || tag == "string" || tag == "color" ||
+               tag == "boolean" || tag == "integer" || tag == "vector";
     }
 
-    void attribute(const std::string &attr_key, const std::string &attr_value) override {
+    void attribute(const std::string &attr_key,
+                   const std::string &attr_value) override {
         if (attr_key == "name") {
             this->name = attr_value;
         } else if (attr_key == "value") {
             this->value = attr_value;
         } else {
-            lightwave_throw("unsupported attribute \"%s\" on <%s />", attr_key, tag);
+            lightwave_throw("unsupported attribute \"%s\" on <%s />", attr_key,
+                            tag);
         }
     }
 
@@ -159,9 +201,7 @@ struct SceneParser::IncludeNode : public SceneParser::Node {
 
     IncludeNode(const ref<Node> &parent) : Node(parent) {}
 
-    std::filesystem::path getFilePath() const override {
-        return filepath;
-    }
+    std::filesystem::path getFilePath() const override { return filepath; }
 
     void attribute(const std::string &key, const std::string &value) override {
         if (key == "filename") {
@@ -171,7 +211,7 @@ struct SceneParser::IncludeNode : public SceneParser::Node {
         }
     }
 
-    void addChild(const ref<Object> &object, const std::string &name) override {
+    void addChild(const std::shared_future<ref<Object>> &object, const std::string &name) override {
         parent->addChild(object, name);
     }
 
@@ -188,9 +228,11 @@ struct SceneParser::ReferenceNode : public SceneParser::Node {
     ReferenceNode(const ref<Node> &parent) : Node(parent) {}
 
     void attribute(const std::string &key, const std::string &value) override {
-        if (key == "id") id = value; else
-        if (key == "name") name = value; else
-        {
+        if (key == "id")
+            id = value;
+        else if (key == "name")
+            name = value;
+        else {
             lightwave_throw("unsupported attribute \"%s\" on <ref />", key);
         }
     }
@@ -206,18 +248,19 @@ struct SceneParser::TransformNode : public SceneParser::Node {
 
     // for matrix
     Matrix4x4 matrix;
-    
+
     // for scale, translate
     Vector value;
-    
+
     // for lookat
     Vector origin, target, up;
-    
+
     // for rotate
     Vector axis;
     float angle;
 
-    TransformNode(const std::string &tag, const ref<Node> &parent) : Node(parent), tag(tag) {
+    TransformNode(const std::string &tag, const ref<Node> &parent)
+        : Node(parent), tag(tag) {
         if (auto p = dynamic_cast<ObjectNode *>(parent.get())) {
             transform = p->transform.get();
         }
@@ -226,50 +269,90 @@ struct SceneParser::TransformNode : public SceneParser::Node {
             lightwave_throw("<%s /> can only be applied on <transform />", tag);
         }
 
-        if (tag == "translate") value = Vector(0); else
-        if (tag == "scale") value = Vector(1);
+        if (tag == "translate")
+            value = Vector(0);
+        else if (tag == "scale")
+            value = Vector(1);
     }
 
     static bool supportsTag(const std::string &tag) {
-        return tag == "matrix" || tag == "translate" || tag == "scale" || tag == "rotate" || tag == "lookat";
+        return tag == "matrix" || tag == "translate" || tag == "scale" ||
+               tag == "rotate" || tag == "lookat";
     }
 
-    void attribute(const std::string &attr_key, const std::string &attr_value) override {
+    void attribute(const std::string &attr_key,
+                   const std::string &attr_value) override {
         if (tag == "matrix") {
-            if (attr_key == "value") { this->matrix = parse_string<Matrix4x4>(attr_value); return; }
+            if (attr_key == "value") {
+                this->matrix = parse_string<Matrix4x4>(attr_value);
+                return;
+            }
         }
 
         if (tag == "translate" || tag == "scale") {
-            if (attr_key == "x") { this->value.x() = parse_string<float>(attr_value); return; }
-            if (attr_key == "y") { this->value.y() = parse_string<float>(attr_value); return; }
-            if (attr_key == "z") { this->value.z() = parse_string<float>(attr_value); return; }
-            if (attr_key == "value") { this->value = parse_string<Vector>(attr_value); return; }
+            if (attr_key == "x") {
+                this->value.x() = parse_string<float>(attr_value);
+                return;
+            }
+            if (attr_key == "y") {
+                this->value.y() = parse_string<float>(attr_value);
+                return;
+            }
+            if (attr_key == "z") {
+                this->value.z() = parse_string<float>(attr_value);
+                return;
+            }
+            if (attr_key == "value") {
+                this->value = parse_string<Vector>(attr_value);
+                return;
+            }
         }
 
         if (tag == "rotate") {
-            if (attr_key == "axis") { this->axis = parse_string<Vector>(attr_value); return; }
-            if (attr_key == "angle") { this->angle = parse_string<float>(attr_value); return; }
+            if (attr_key == "axis") {
+                this->axis = parse_string<Vector>(attr_value);
+                return;
+            }
+            if (attr_key == "angle") {
+                this->angle = parse_string<float>(attr_value);
+                return;
+            }
         }
 
         if (tag == "lookat") {
-            if (attr_key == "origin") { this->origin = parse_string<Vector>(attr_value); return; }
-            if (attr_key == "target") { this->target = parse_string<Vector>(attr_value); return; }
-            if (attr_key == "up") { this->up = parse_string<Vector>(attr_value); return; }
+            if (attr_key == "origin") {
+                this->origin = parse_string<Vector>(attr_value);
+                return;
+            }
+            if (attr_key == "target") {
+                this->target = parse_string<Vector>(attr_value);
+                return;
+            }
+            if (attr_key == "up") {
+                this->up = parse_string<Vector>(attr_value);
+                return;
+            }
         }
 
-        lightwave_throw("unsupported attribute \"%s\" on <%s />", attr_key, tag);
+        lightwave_throw("unsupported attribute \"%s\" on <%s />", attr_key,
+                        tag);
     }
 
     void close() override {
-        if (tag == "matrix") transform->matrix(matrix); else
-        if (tag == "translate") transform->translate(value); else
-        if (tag == "scale") transform->scale(value); else
-        if (tag == "rotate") transform->rotate(axis, angle * Pi / 180); else
-        if (tag == "lookat") transform->lookat(origin, target, up);
+        if (tag == "matrix")
+            transform->matrix(matrix);
+        else if (tag == "translate")
+            transform->translate(value);
+        else if (tag == "scale")
+            transform->scale(value);
+        else if (tag == "rotate")
+            transform->rotate(axis, angle * Pi / 180);
+        else if (tag == "lookat")
+            transform->lookat(origin, target, up);
     }
 };
 
-void SceneParser::open(const std::string &tag) {
+void SceneParser::open(const std::string &tag, const XMLParser::SourceLocation &loc) {
     auto parent = m_stack.top();
     if (tag == "include") {
         m_stack.push(std::make_shared<IncludeNode>(parent));
@@ -282,19 +365,18 @@ void SceneParser::open(const std::string &tag) {
     } else {
         m_stack.push(std::make_shared<ObjectNode>(tag, parent));
     }
+    m_stack.top()->location = loc;
 }
 
-void SceneParser::enter() {
-    m_stack.top()->enter();
-}
+void SceneParser::enter() { m_stack.top()->enter(); }
 
 std::string SceneParser::resolveVariables(const std::string &value) {
     std::string result = "";
-    size_t j = value.size();
+    size_t j           = value.size();
     for (size_t i = 0; i < j; i++) {
         if (i < (j - 1) && value.at(i) == '$' && value.at(i + 1) == '{') {
             std::string varName = "";
-            
+
             i += 2;
             while (true) {
                 if (i >= j) {
@@ -302,7 +384,8 @@ std::string SceneParser::resolveVariables(const std::string &value) {
                 }
 
                 const char chr = value.at(i++);
-                if (chr == '}') break;
+                if (chr == '}')
+                    break;
                 varName += chr;
             }
 
@@ -324,11 +407,18 @@ void SceneParser::close() {
     m_stack.pop();
 }
 
-SceneParser::SceneParser(const std::filesystem::path &path) {
+void SceneParser::stop() {
+    pool.clear_queue();
+    pool.stop(true);
+}
+
+SceneParser::SceneParser(const std::filesystem::path &path) : m_progress("parsing") {
     m_stack.push(std::make_shared<RootNode>(m_objects, path, *this));
     XMLParser(*this, path);
+    close();
+    m_progress.finish();
 }
 
 std::vector<ref<Object>> SceneParser::objects() const { return m_objects; }
 
-}
+} // namespace lightwave

@@ -73,6 +73,8 @@ extern Logger logger;
 /// @brief A convenience class to keep the user updated about the progress of a
 /// long-running task.
 class ProgressReporter {
+    /// @brief The name of the currently running task.
+    std::string m_name;
     /// @brief The number of work units that need to be completed for the task
     /// to finish.
     int m_unitsTotal;
@@ -95,32 +97,45 @@ class ProgressReporter {
     }
 
 public:
-    ProgressReporter(int unitsTotal) {
+    ProgressReporter(int unitsTotal = 0)
+    : ProgressReporter("render", unitsTotal) {}
+
+    ProgressReporter(const std::string &name, int unitsTotal = 0) {
+        m_name           = name;
         m_unitsTotal     = unitsTotal;
         m_unitsCompleted = 0;
         m_hasFinished    = false;
 
-        logger.setStatus("\033[96m[render]\033[0m starting render job");
+        logger.setStatus("\033[96m[%s]\033[0m starting render job", m_name);
     }
 
     /// @brief The number of work units that have been completed so far.
     int unitsCompleted() const { return m_unitsCompleted; }
     /// @brief The number of work units that need to be completed for the task
     /// to finish.
-    int uintsTotal() const { return m_unitsTotal; }
+    int unitsTotal() const { return m_unitsTotal; }
 
-    /// @brief Marks a number of @c unitsCompleted as completed and notifies the
+    /// @brief Increments @c unitsCompleted (and optionally @c unitsTotal ) and notifies the
     /// user about the progress.
-    void operator+=(int unitsCompleted) {
+    void update(int unitsCompleted, int unitsTotal = 0) {
         m_unitsCompleted += unitsCompleted;
+        m_unitsTotal += unitsTotal;
+
         const auto progress    = m_unitsCompleted / float(m_unitsTotal);
         const auto elapsedTime = m_timer.getElapsedTime();
 
         logger.setStatus(
-            "\033[96m[render]\033[0m %s \033[96m%3.0f%%\033[0m "
+            "\033[96m[%s]\033[0m %s \033[96m%3.0f%%\033[0m "
             "(\033[92m%.0fs\033[0m elapsed, \033[93m%.0fs\033[0m eta)",
+            m_name,
             makeProgressBar(progress), 100 * progress, elapsedTime,
             elapsedTime * (1 - progress) / progress);
+    }
+
+    /// @brief Marks a number of @c unitsCompleted as completed and notifies the
+    /// user about the progress.
+    void operator+=(int unitsCompleted) {
+        update(unitsCompleted);
     }
 
     /// @brief Marks the task as finished and notifies the user.
@@ -128,7 +143,7 @@ public:
         if (m_hasFinished)
             return;
         logger.setStatus("");
-        logger(EInfo, "done! took %.2f seconds", m_timer.getElapsedTime());
+        logger(EInfo, "%s done! took %.2f seconds", m_name, m_timer.getElapsedTime());
         m_hasFinished = true;
     }
 

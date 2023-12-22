@@ -55,6 +55,7 @@ add_subdirectory(deps/miniz)
 include_directories(deps/tinyexr)
 include_directories(deps/stb)
 include_directories(deps/tinyformat)
+include_directories(deps/ctpl)
 find_package(Threads REQUIRED)
 
 function(add_extra_options TARGET)
