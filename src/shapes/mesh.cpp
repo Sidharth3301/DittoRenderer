@@ -86,14 +86,14 @@ namespace lightwave
 
             // we take the closest t, and if the ray intersects a triangle behind the one we just did, then its
             // not visible to the camera
-            if (t > its.t)
+            if (t > its.t || t< Epsilon)
             {
                 return false;
             }
-            if ((Vector(ray.origin) - hitPoint).length() < 1e-4f)
-            { // self intersection check
-                return false;
-            }
+            // if ((Vector(ray.origin) - hitPoint).length() < 1e-4f)
+            // { // self intersection check
+            //     return false;
+            // }
             its.t = t;
             its.position = ray(its.t);
             // populate(its, ray(its.t));
