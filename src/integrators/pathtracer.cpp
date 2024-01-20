@@ -32,6 +32,56 @@ namespace lightwave
          * @brief The job of an integrator is to return a color for a ray produced by the camera model.
          * This will be run for each pixel of the image, potentially with multiple samples for each pixel.
          */
+        // Color Li(const Ray &ray, Sampler &rng) override
+        // {
+        //     Color color{0.0f};
+        //     Color weight{1.0f};
+        //     Ray curr_ray = ray;
+
+        //     while (true)
+        //     {
+        //         Intersection its = m_scene->intersect(curr_ray, rng);
+        //         if (!its)
+        //         {
+        //             color += m_scene->evaluateBackground(curr_ray.direction).value * weight;
+        //             break;
+        //         }
+        //         else
+        //         {
+        //             color += its.evaluateEmission()*weight;
+        //             if (m_scene->hasLights())
+        //             {
+        //                 LightSample ls = m_scene->sampleLight(rng);
+        //                 if (!ls.light->canBeIntersected())
+        //                 {
+        //                     DirectLightSample dls = ls.light->sampleDirect(its.position, rng);
+
+        //                     Vector toLight = dls.wi; // Directional light's direction
+        //                     bool isIntersecting = m_scene->intersect(Ray(its.position, toLight), dls.distance, rng);
+
+        //                     if (!isIntersecting)
+        //                     { // Check if light direction is visible
+        //                         Color bsdfVal = its.evaluateBsdf(toLight).value;
+        //                         color += (bsdfVal * dls.weight *weight / ls.probability);
+        //                     }
+        //                 }
+        //             }
+        //             if (curr_ray.depth>=depth-1){
+        //                 return color;
+        //             }
+        //             BsdfSample b = its.sampleBsdf(rng);
+        //             if (b.isInvalid())
+        //             {
+        //                 return color;
+        //             }
+        //             weight *= b.weight;
+        //             curr_ray.origin = its.position;
+        //             curr_ray.direction = b.wi;
+        //             curr_ray.depth +=1;
+        //         }
+        //     }
+        //     return color;
+        // }
         Color Li(const Ray &ray, Sampler &rng) override
         {
             Color color{0.0f};
@@ -48,7 +98,11 @@ namespace lightwave
                 }
                 else
                 {
-                    color += its.evaluateEmission()*weight;
+                    color += its.evaluateEmission() * weight;
+                    if (curr_ray.depth >= depth - 1)
+                    {
+                        return color;
+                    }
                     if (m_scene->hasLights())
                     {
                         LightSample ls = m_scene->sampleLight(rng);
@@ -62,22 +116,23 @@ namespace lightwave
                             if (!isIntersecting)
                             { // Check if light direction is visible
                                 Color bsdfVal = its.evaluateBsdf(toLight).value;
-                                color += (bsdfVal * dls.weight *weight / ls.probability);
+                                color += (bsdfVal * dls.weight * weight / ls.probability);
                             }
                         }
                     }
-                    if (curr_ray.depth>=depth-1){
-                        return color;
-                    }
+                    // if (curr_ray.depth >= depth - 1)
+                    // {
+                    //     break; // Exit the loop when you reach the desired depth
+                    // }
                     BsdfSample b = its.sampleBsdf(rng);
                     if (b.isInvalid())
                     {
-                        return color;
+                        break;
                     }
                     weight *= b.weight;
                     curr_ray.origin = its.position;
                     curr_ray.direction = b.wi;
-                    curr_ray.depth +=1;
+                    curr_ray.depth += 1;
                 }
             }
             return color;
