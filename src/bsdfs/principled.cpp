@@ -46,7 +46,7 @@ namespace lightwave
             auto D = microfacet::evaluateGGX(alpha, mfacet_normal);
             auto Gwi = microfacet::smithG1(alpha, mfacet_normal, wi);
             auto Gwo = microfacet::smithG1(alpha, mfacet_normal, wo);
-            auto fr = reflectance * D * Gwi * Gwo / (4 * fabs(Frame::cosTheta(wo)));
+            auto fr = reflectance * D * Gwi * Gwo / (4 * fabs(Frame::cosTheta(wi)) * fabs(Frame::cosTheta(wo)));
             return BsdfEval{.value = fr};
 
             // hints:
@@ -60,10 +60,6 @@ namespace lightwave
         {
             BsdfSample samp;
             auto mf_normal = microfacet::sampleGGXVNDF(alpha, wo, rng.next2D());
-            if (microfacet::pdfGGXVNDF(alpha, mf_normal, wo) < 0)
-            {
-                return BsdfSample::invalid();
-            }
             samp.wi = reflect(wo, mf_normal);
             auto sign = Frame::cosTheta(samp.wi) > 0 ? 1 : -1;
             samp.weight = color * microfacet::smithG1(alpha, mf_normal, samp.wi) * sign;
@@ -148,24 +144,25 @@ namespace lightwave
                 auto diffuse_sample = combination.diffuse.sample(wo, rng);
                 bsdfSample.wi = diffuse_sample.wi;
                 bsdfSample.weight = diffuse_sample.weight / prob;
-                 if (std::isnan(prob))
+                if (std::isnan(prob))
                 {
                     return BsdfSample::invalid();
                 }
-
+                // assert_finite(bsdfSample.weight, {});
             }
             else
             {
-                 float metallic_prob = 1 - prob;
 
                 auto metallic_sample = combination.metallic.sample(wo, rng);
                 bsdfSample.wi = metallic_sample.wi;
-                bsdfSample.weight = metallic_sample.weight / metallic_prob;
-                 if (std::isnan(metallic_prob))
+                float metallic_prob = 1 - prob;
+                if (std::isnan(metallic_prob))
                 {
                     return BsdfSample::invalid();
                 }
-
+                bsdfSample.weight = metallic_sample.weight / metallic_prob;
+                assert_finite(bsdfSample.weight,{});
+                // logger(EDebug, "metallic prob %f", metallic_prob);
             }
 
             return bsdfSample;
