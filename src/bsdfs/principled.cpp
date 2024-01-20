@@ -148,7 +148,7 @@ namespace lightwave
                 auto diffuse_sample = combination.diffuse.sample(wo, rng);
                 bsdfSample.wi = diffuse_sample.wi;
                 bsdfSample.weight = diffuse_sample.weight / prob;
-                if (std::isnan(prob))
+                if (bsdfSample.isInvalid())
                 {
                     return BsdfSample::invalid();
                 }

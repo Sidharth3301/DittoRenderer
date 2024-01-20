@@ -12,6 +12,9 @@ public:
 
     BsdfEval evaluate(const Point2 &uv, const Vector &wo,
                       const Vector &wi) const override {
+        if (Frame::cosTheta(wi)*Frame::cosTheta(wo) <= 0) {
+            return BsdfEval::invalid();
+        }
         return BsdfEval{.value = (m_albedo->evaluate(uv)*Frame::cosTheta(wi))/Pi};
     }
 

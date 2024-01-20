@@ -62,7 +62,7 @@ namespace lightwave
                             if (!isIntersecting)
                             { // Check if light direction is visible
                                 Color bsdfVal = its.evaluateBsdf(toLight).value;
-                                color += (bsdfVal * dls.weight / ls.probability);
+                                color += (bsdfVal * dls.weight *weight / ls.probability);
                             }
                         }
                     }

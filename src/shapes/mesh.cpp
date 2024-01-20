@@ -81,19 +81,20 @@ namespace lightwave
             if (v < 0.f || u + v > 1.f)
                 return false;
 
-            Vector hitPoint = (1 - u - v) * v0 + u * v1 + v * v2;
+            // Vector hitPoint = (1 - u - v) * v0 + u * v1 + v * v2;
             float t = Q.dot(edge2) * denom;
 
             // we take the closest t, and if the ray intersects a triangle behind the one we just did, then its
             // not visible to the camera
-            if (t > its.t || t< Epsilon)
+             if (t< 1e-4f)
+            { // self intersection check
+                return false;
+            }
+            if (t > its.t )
             {
                 return false;
             }
-            // if ((Vector(ray.origin) - hitPoint).length() < 1e-4f)
-            // { // self intersection check
-            //     return false;
-            // }
+           
             its.t = t;
             its.position = ray(its.t);
             // populate(its, ray(its.t));

@@ -59,7 +59,7 @@ namespace lightwave
                         if (!isIntersecting)
                         { // Check if light direction is visible
                             Color bsdfVal = first_its.evaluateBsdf(toLight).value;
-                            color += (bsdfVal * dls.weight / ls.probability);
+                            color += (bsdfVal * dls.weight *weight / ls.probability);
                             // weight *= dls.weight;
                         }
                     }
@@ -72,7 +72,6 @@ namespace lightwave
                 weight *= b.weight;
                 Ray second_ray{first_its.position, b.wi};
                 Intersection second_its = m_scene->intersect(second_ray, rng);
-                // BsdfSample sample2 = second_its.sampleBsdf(rng);
                 if (!second_its)
                 {
                     color += (m_scene->evaluateBackground(second_ray.direction).value * weight);
