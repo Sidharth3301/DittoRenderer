@@ -30,6 +30,8 @@ class Instance : public Shape {
     ref<Emission> m_emission;
     /// @brief The transformation applied to the shape, leading from object coordinates to world coordinates.
     ref<Transform> m_transform;
+    ref<Texture> m_normal;
+    ref<Texture> m_alpha;
     /// @brief Flip the normal direction, used to correct for the change of handedness in case the transformation mirrors the object.
     bool m_flipNormal;
     /// @brief Tracks whether this instance has been added to the scene, i.e., could be hit by ray tracing.
@@ -45,6 +47,10 @@ public:
         m_bsdf = properties.getOptionalChild<Bsdf>();
         m_emission = properties.getOptionalChild<Emission>();
         m_transform = properties.getOptionalChild<Transform>();
+        m_normal = properties.get<Texture>("normal");
+        m_alpha = properties.get<Texture>("alpha");
+
+
         m_visible = false;
         
         m_flipNormal = false;
