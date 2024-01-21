@@ -5,6 +5,16 @@
 
 namespace lightwave {
 
+    Vector Instance::applyNormal(SurfaceEvent &surf) const {
+    if (!m_transform) {
+        // fast path, if no transform is needed
+        return surf.frame.normal;
+    }
+    // hint: transform the normal here
+    Vector newNormal = m_transform->inverse(surf.frame.normal);
+    return newNormal;
+}
+
 void Instance::transformFrame(SurfaceEvent &surf) const {
     // hints:
     // * transform the hitpoint and frame here
@@ -12,18 +22,7 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
         surf.position = m_transform->apply(surf.position);
-        surf.frame.tangent= m_transform->apply(surf.frame.tangent).normalized();
-        Vector bitangent = m_transform->apply(surf.frame.bitangent);
-        float proj = surf.frame.tangent.dot(bitangent);
-
-        surf.frame.bitangent = (bitangent - proj * surf.frame.tangent).normalized();
-        if (m_flipNormal)
-        {
-            surf.frame.bitangent = -surf.frame.bitangent;
-        }
-
-        surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
-        
+        surf.frame = Frame(applyNormal(surf)); 
 }
 
 bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const {
@@ -51,9 +50,15 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     its.t = its.t * scaleNum;  // its.t now contains the t in object space
     
     const bool wasIntersected = m_shape->intersect(localRay, its, rng);
+    
+
     if (wasIntersected) {
         // hint: how does its.t need to change?
-
+        auto normal_texture = m_normal->evaluate(its.uv);
+        auto normal_rgb = Vector(normal_texture.r(), normal_texture.g(), normal_texture.b());
+        normal_rgb = normal_rgb * 2 - Vector(1, 1, 1);
+        normal_rgb = normal_rgb.x() * its.frame.tangent + normal_rgb.y() * its.frame.bitangent + 5 * normal_rgb.z() * its.frame.normal;
+        its.frame.normal = normal_rgb;
         its.instance = this;
         transformFrame(its);
         its.t = its.t / scaleNum;

@@ -98,6 +98,7 @@ public:
      * @param rng A random number generator used to steer sampling decisions.
      */
     AreaSample sampleArea(Sampler &rng) const override;
+    Vector applyNormal(SurfaceEvent &surf) const override;
 
     /// @brief Returns a textual representation of this image.
     std::string toString() const override {
