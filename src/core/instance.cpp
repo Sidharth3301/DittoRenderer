@@ -23,6 +23,7 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     //   the direction of the transformed tangent the same)
         surf.position = m_transform->apply(surf.position);
         surf.frame = Frame(applyNormal(surf)); 
+        surf.pdf *= surf.frame.bitangent.cross(surf.frame.tangent).length();
 }
 
 bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const {
