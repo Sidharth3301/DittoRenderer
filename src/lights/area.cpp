@@ -12,8 +12,7 @@ namespace lightwave
     public:
         AreaLight(const Properties &properties)
         {
-            Power = properties.get<Color>("power");
-            shape = properties.get<Instance>("instance");
+            shape = properties.getOptionalChild<Instance>();
         }
 
         DirectLightSample sampleDirect(const Point &origin,
@@ -25,12 +24,12 @@ namespace lightwave
             Vector dir = areasample.position - origin;
             Li.wi = dir.normalized();
             
-            Li.weight = shape->emission()->evaluate(areasample.uv, Li.wi).value/ (areasample.pdf* dir.lengthSquared());
+            Li.weight = shape->emission()->evaluate(areasample.uv, -1*Li.wi).value/ (areasample.pdf*dir.lengthSquared());
             Li.distance = dir.length();
             return Li;
         }
 
-        bool canBeIntersected() const override { return shape->isVisible(); }
+        bool canBeIntersected() const override { return false; }
 
         std::string toString() const override
         {
