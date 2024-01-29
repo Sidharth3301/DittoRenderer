@@ -24,10 +24,7 @@ static uint64_t now() {
 #endif
 }
 
-static std::string thousands(int number) {
-    bool isNegative = number < 0;
-    number          = abs(number);
-
+static std::string thousands(uint64_t number) {
     std::string result;
     do {
         int part = number % 1000;
@@ -35,7 +32,7 @@ static std::string thousands(int number) {
         result = tfm::format(number ? "%03d" : "%d", part) +
                  (result.empty() ? "" : "," + result);
     } while (number);
-    return isNegative ? "-" + result : result;
+    return result;
 }
 
 class Profiler {
