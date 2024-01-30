@@ -79,14 +79,12 @@ namespace lightwave
         }
         AreaSample sampleArea(Sampler &rng) const override
         {
-            double theta = 2.0 * Pi * rng.next();           // Theta ranges from 0 to 2*Pi
-            double phi = std::acos(2.0 * rng.next() - 1.0); // Phi ranges from 0 to Pi
-
-            // Convert spherical coordinates to Cartesian coordinates
-            double x = std::sin(phi) * std::cos(theta);
-            double y = std::sin(phi) * std::sin(theta);
-            double z = std::cos(phi);
-
+            Point2 u= rng.next2D();
+            float z = 1 - 2 * u[0];
+            float r = sqrt(max((float)0, (float)1 - z * z));
+            float phi = 2 * Pi * u[1];
+            auto x =r * std::cos(phi);
+            auto y = r * std::sin(phi);
             // Create a sample point on the unit sphere
             Point samplePoint(x, y, z);
             AreaSample result;
