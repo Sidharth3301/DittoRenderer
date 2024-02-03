@@ -25,7 +25,9 @@ namespace lightwave
 
             Vector dir = areasample.position - origin;
             Li.wi = dir.normalized();
-            Li.weight = m_instance->emission()->evaluate(areasample.uv, Li.wi).value/ (areasample.pdf*dir.lengthSquared());
+            auto costheta = areasample.frame.normal.dot(Li.wi);
+            auto intensity = m_instance->emission()->evaluate(areasample.uv, Li.wi).value;
+            Li.weight = intensity*costheta/ (areasample.pdf*dir.lengthSquared());
             Li.distance = dir.length();
             return Li;
         }

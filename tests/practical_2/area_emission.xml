@@ -1,4 +1,4 @@
-<test type="image" id="emission">
+<test type="image" id="area_emission">
     <integrator type="direct">
         <scene id="scene">
             <camera type="perspective" id="camera">
