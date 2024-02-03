@@ -63,3 +63,4 @@ private:
 #define REGISTER_GROUP(     Class, Name) REGISTER_CLASS(Class, "group"     , Name)
 #define REGISTER_LIGHT(     Class, Name) REGISTER_CLASS(Class, "light"     , Name)
 #define REGISTER_TEST(      Class, Name) REGISTER_CLASS(Class, "test"      , Name)
+#define REGISTER_DENOISE(      Class, Name) REGISTER_CLASS(Class, "denoise"      , Name)

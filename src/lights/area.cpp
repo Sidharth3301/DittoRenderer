@@ -5,8 +5,6 @@ namespace lightwave
 
     class AreaLight final : public Light
     {
-        Point pLight;
-        Color Power;
         ref<Instance> shape;
 
     public:
@@ -23,8 +21,7 @@ namespace lightwave
 
             Vector dir = areasample.position - origin;
             Li.wi = dir.normalized();
-            
-            Li.weight = shape->emission()->evaluate(areasample.uv, -1*Li.wi).value/ (areasample.pdf*dir.lengthSquared());
+            Li.weight = shape->emission()->evaluate(areasample.uv, Li.wi).value/ (areasample.pdf);
             Li.distance = dir.length();
             return Li;
         }
