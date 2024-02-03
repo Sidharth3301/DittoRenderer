@@ -13,7 +13,7 @@
                     <translate z="-5"/>
                 </transform>
             </camera>
-            <light type="area" intensity="10,10,10"/>
+            <light type="area">
             <instance>
                 <shape type="sphere"/>
                 <emission type="lambertian">
@@ -24,8 +24,9 @@
                     <translate x="2.5" y="-2" z="1"/>
                 </transform>
             </instance>
+            </light>
             
-            <light type="area" intensity="10,10,10"/>
+            <light type="area">
             <instance>
                 <shape type="sphere"/>
                 <emission type="lambertian">
@@ -36,6 +37,7 @@
                     <translate x="-2.5" y="-2" z="1"/>
                 </transform>
             </instance>
+            </light>
             
             <instance>
                 <shape type="mesh" filename="../meshes/bunny.ply"/>

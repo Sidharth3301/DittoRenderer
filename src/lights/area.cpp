@@ -5,23 +5,27 @@ namespace lightwave
 
     class AreaLight final : public Light
     {
-        ref<Instance> shape;
+        ref<Instance> m_instance;
 
     public:
         AreaLight(const Properties &properties)
         {
-            shape = properties.getOptionalChild<Instance>();
+            m_instance = properties.getChild<Instance>();
         }
 
         DirectLightSample sampleDirect(const Point &origin,
                                        Sampler &rng) const override
         {
             DirectLightSample Li;
-            AreaSample areasample = shape->sampleArea(rng);
+            AreaSample areasample;
+            if (m_instance)
+            { areasample = m_instance->sampleArea(rng);}
+            else
+            {logger(EInfo, "Not found the shape");}
 
             Vector dir = areasample.position - origin;
             Li.wi = dir.normalized();
-            Li.weight = shape->emission()->evaluate(areasample.uv, Li.wi).value/ (areasample.pdf);
+            Li.weight = m_instance->emission()->evaluate(areasample.uv, Li.wi).value/ (areasample.pdf*dir.lengthSquared());
             Li.distance = dir.length();
             return Li;
         }
