@@ -52,6 +52,7 @@ namespace lightwave
         if (m_alpha){
             its.alphaMasking = m_alpha.get();
         }
+        else its.alphaMasking=nullptr;
         if (!m_transform)
         {
             // fast path, if no transform is needed
