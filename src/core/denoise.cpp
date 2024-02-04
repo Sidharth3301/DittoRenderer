@@ -1,39 +1,31 @@
-// #include <OpenImageDenoise/oidn.hpp>
-// #include <lightwave>
-// namespace lightwave{
-// class Denoise{
+// /**
+//  * @brief Contains the denoise interface.
+//  */
 
-//     public:
-// oidn::DeviceRef device = oidn::newDevice(); // CPU or GPU if available
-// device.commit();
+// #include <lightwave/core.hpp>
+// #include <lightwave/color.hpp>
+// #include <lightwave/math.hpp>
+// #include <lightwave/image.hpp>
+// #include<lightwave.hpp>
 
-// // Create buffers for input/output images accessible by both host (CPU) and device (CPU/GPU)
-// oidn::BufferRef colorBuf  = device.newBuffer(width * height * 3 * sizeof(float));
-// // oidn::BufferRef albedoBuf = 
+// namespace lightwave {
 
-// // Create a filter for denoising a beauty (color) image using optional auxiliary images too
-// // This can be an expensive operation, so try no to create a new filter for every image!
-// oidn::FilterRef filter = device.newFilter("RT"); // generic ray tracing filter
-// filter.setImage("color",  colorBuf,  oidn::Format::Float3, width, height); // beauty
-// filter.setImage("albedo", albedoBuf, oidn::Format::Float3, width, height); // auxiliary
-// filter.setImage("normal", normalBuf, oidn::Format::Float3, width, height); // auxiliary
-// filter.setImage("output", colorBuf,  oidn::Format::Float3, width, height); // denoised beauty
-// filter.set("hdr", true); // beauty image is HDR
-// filter.commit();
+// /**
+//  * @brief Post processes alter an input image to produce an improved output image (e.g., tonemapping or denoising).
+//  */
+// class Denoise final : public Postprocess {
+// protected:
+//     /// @brief The input image that is to be processed.
+//     ref<Image> m_input;
+//     /// @brief The output image that will be produced.
+//     ref<Image> m_output;
 
-// // Fill the input image buffers
-// float* colorPtr = (float*)colorBuf.getData();
-// ...
-
-// // Filter the beauty image
-// filter.execute();
-
-// // Check for errors
-// const char* errorMessage;
-// if (device.getError(errorMessage) != oidn::Error::None)
-//   std::cout << "Error: " << errorMessage << std::endl;
-
+// public:
+//     Denoise(const Properties &properties) {
+//         m_input = properties.get<Image>("input");
+//         m_output = properties.getChild<Image>();
+//     }
 // };
+
 // }
-// // Create an Open Image Denoise device
-// REGISTER_DENOISE(Denoise, "denoise")
+// REGISTER_POSTPROCESS(Denoise, "denoise")
