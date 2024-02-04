@@ -14,8 +14,8 @@ namespace lightwave
             return surf.frame.normal;
         }
         // hint: transform the normal here
-        Vector newNormal = m_transform->inverse(surf.frame.normal);
-        return newNormal;
+        Vector newNormal = m_transform->inverse(surf.frame.normal)*m_transform->determinant();
+        return newNormal.normalized();
     }
 
     void Instance::transformFrame(SurfaceEvent &surf) const

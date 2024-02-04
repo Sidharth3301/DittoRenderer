@@ -63,6 +63,8 @@ public:
     Bsdf *bsdf() const { return m_bsdf.get(); }
     /// @brief Returns the distribution of light the shape should emit (can be null for non-emissive objects).
     Emission *emission() const { return m_emission.get(); }
+    Texture *alpha() const { return m_alpha.get(); }
+
     /// @brief Returns the light object that contains this instance (or null if this instance is not part of any area light).
     Light *light() const { return m_light; }
 

@@ -59,7 +59,7 @@ namespace lightwave
 
             if (t0 > its.t)
                 return false;
-
+            if (its.alphaMasking->scalar(uv) < 0.5){return false;}
             its.t = t0;
             Point position = ray(its.t);
             populate(its, position);

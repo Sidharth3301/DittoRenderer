@@ -94,7 +94,7 @@ namespace lightwave
             {
                 return false;
             }
-           
+           if (its.alphaMasking->scalar(uv) < 0.5){return false;}
             its.t = t;
             its.position = ray(its.t);
             // populate(its, ray(its.t));

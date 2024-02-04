@@ -52,7 +52,7 @@ public:
         // we have intersected an infinite plane at z=0; now dismiss anything outside of the [-1,-1,0]..[+1,+1,0] domain.
         if (std::abs(position.x()) > 1 || std::abs(position.y()) > 1)
             return false;
-
+        if (its.alphaMasking->scalar(uv) < 0.5){return false;}
         // we have determined there was an intersection! we are now free to change the intersection object and return true.
         its.t = t;
         populate(its, position); // compute the shading frame, texture coordinates and area pdf (same as sampleArea)

@@ -714,7 +714,7 @@ struct Vertex {
     Vector2 texcoords;
     /// @brief The normal vector, which will be barycentrically interpolated when smooth normals are used.
     Vector normal;
-
+   
     /// @brief Barycentric interpolation of vertices ([0,0] returns a, [1,0] returns b, and [0,1] returns c).
     static Vertex interpolate(const Vector2 &bary, const Vertex &a, const Vertex &b, const Vertex &c) {
         return {
@@ -745,7 +745,7 @@ struct Intersection : public SurfaceEvent {
     Vector wo;
     /// @brief The intersection distance, which can also be used to specify a maximum distance when querying intersections.
     float t;
-
+    Texture* alphaMasking = instance->alpha();
     /// @brief Statistics recorded while traversing acceleration structures.
     struct {
         /// @brief The number of BVH nodes that have been tested for intersection.
