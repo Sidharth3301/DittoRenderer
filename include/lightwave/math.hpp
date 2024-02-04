@@ -155,6 +155,7 @@ public:
     bool operator==(const TPoint &other) const { return m_data == other.m_data; }
     /// @brief Checks whether two points are not exactly identical.
     bool operator!=(const TPoint &other) const { return m_data != other.m_data; }
+    auto normalized() const { return *this / length(); }
 
     /// @brief Returns whether the point lies at the origin, i.e., all components are zero. 
     bool isZero() const {

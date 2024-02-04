@@ -48,7 +48,10 @@ namespace lightwave
     }
 
     bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const
-    {
+    { 
+        if (m_alpha){
+            its.alphaMasking = m_alpha.get();
+        }
         if (!m_transform)
         {
             // fast path, if no transform is needed

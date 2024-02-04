@@ -18,6 +18,12 @@ namespace lightwave
             // since we sample the area uniformly, the pdf is given by 1/surfaceArea
             surf.pdf = 0;
         }
+        inline Point2 sphere_uv_coord(const Vector hitpoint) const
+        {
+            float theta = acos(hitpoint.y());
+            float phi = atan2(hitpoint.x(), hitpoint.z());
+            return Point2(theta * Inv2Pi, phi * Inv2Pi);
+        }
 
     public:
         Sphere(const Properties &properties)
@@ -59,7 +65,15 @@ namespace lightwave
 
             if (t0 > its.t)
                 return false;
-            // if (its.alphaMasking->scalar(uv) < 0.5){return false;}
+            auto hitPoint = o+t0*d;
+            if (its.alphaMasking)
+            {
+                Point2 uv = sphere_uv_coord(hitPoint).normalized();
+                if (its.alphaMasking->scalar(uv) < rng.next())
+                {
+                    return false;
+                }
+            }
             its.t = t0;
             Point position = ray(its.t);
             populate(its, position);
@@ -79,11 +93,11 @@ namespace lightwave
         }
         AreaSample sampleArea(Sampler &rng) const override
         {
-            Point2 u= rng.next2D();
+            Point2 u = rng.next2D();
             float z = 1 - 2 * u[0];
             float r = sqrt(max((float)0, (float)1 - z * z));
             float phi = 2 * Pi * u[1];
-            auto x =r * std::cos(phi);
+            auto x = r * std::cos(phi);
             auto y = r * std::sin(phi);
             // Create a sample point on the unit sphere
             Point samplePoint(x, y, z);

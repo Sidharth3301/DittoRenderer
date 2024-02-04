@@ -51,7 +51,7 @@ namespace lightwave
             Vertex A = m_vertices[triangle[0]];
             Vertex B = m_vertices[triangle[1]];
             Vertex C = m_vertices[triangle[2]];
-            
+
             Vector v0 = (Vector)A.position;
             Vector v1 = (Vector)B.position;
             Vector v2 = (Vector)C.position;
@@ -86,15 +86,22 @@ namespace lightwave
 
             // we take the closest t, and if the ray intersects a triangle behind the one we just did, then its
             // not visible to the camera
-             if (t< 1e-4f)
+            if (t < 1e-4f)
             { // self intersection check
                 return false;
             }
-            if (t > its.t )
+            if (t > its.t)
             {
                 return false;
             }
-        //    if (its.alphaMasking->scalar(uv) < 0.5){return false;}
+            if (its.alphaMasking)
+            {
+                Point2 uv = Point2((1 - u - v) * v0t + u * v1t + v * v2t);
+                if (its.alphaMasking->scalar(uv) < rng.next())
+                {
+                    return false;
+                }
+            }
             its.t = t;
             its.position = ray(its.t);
             // populate(its, ray(its.t));
@@ -110,7 +117,7 @@ namespace lightwave
                 its.frame.normal = N.normalized();
                 its.frame = Frame(its.frame.normal);
             }
-            its.uv = Point2((1-u-v)*v0t + u*v1t+ v*v2t);
+            its.uv = Point2((1 - u - v) * v0t + u * v1t + v * v2t);
 
             return true;
         }
