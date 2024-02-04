@@ -1,5 +1,5 @@
 <test type="image" id="normalmap">
-    <integrator type="direct" variable="normals">
+    <integrator type="normals" variable="normals">
         <scene id="scene">
             <camera type="perspective" id="camera">
                 <integer name="width" value="512"/>
