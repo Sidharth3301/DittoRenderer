@@ -7,6 +7,7 @@ class Dielectric : public Bsdf {
     ref<Texture> m_ior;
     ref<Texture> m_reflectance;
     ref<Texture> m_transmittance;
+    // Color albedo;
 
 public:
     Dielectric(const Properties &properties) {
@@ -46,8 +47,15 @@ public:
             bsdfSample.wi = refract(wo,adj_normal, eta).normalized();
             bsdfSample.weight = m_transmittance->evaluate(uv)/(eta*eta);
         }
-
+        
         return bsdfSample;
+    }
+    Color getAlbedo(const Point2 &uv, const Vector &wo) const override {
+        float ior = m_ior->scalar(uv); // Assuming IOR is a single value texture
+        // auto normal = Vector(0,0,1);
+        bool entering = Frame::cosTheta(wo) < 0;
+        float eta = entering ? (1/ ior) : ior; 
+        return (m_reflectance->evaluate(uv)+m_transmittance->evaluate(uv)/(eta*eta))*0.5;
     }
    
     std::string toString() const override {

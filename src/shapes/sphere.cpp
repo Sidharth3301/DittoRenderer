@@ -18,7 +18,7 @@ namespace lightwave
             // since we sample the area uniformly, the pdf is given by 1/surfaceArea
             surf.pdf = 0;
         }
-        inline Point2 sphere_uv_coord(const Vector hitpoint) const
+        inline Point2 sphere_uv_coord(const Vector &hitpoint) const
         {
             float theta = acos(hitpoint.y());
             float phi = atan2(hitpoint.x(), hitpoint.z());

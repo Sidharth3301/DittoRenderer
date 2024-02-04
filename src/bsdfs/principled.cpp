@@ -30,6 +30,10 @@ namespace lightwave
             // * copy your diffuse bsdf evaluate here
             // * you do not need to query a texture, the albedo is given by `color`
         }
+        Color getAlbedo(const Point2 &uv, const Vector &wo) const 
+        {
+            return color;
+        }
     };
 
     struct MetallicLobe
@@ -70,6 +74,10 @@ namespace lightwave
             // * you do not need to query textures
             //   * the reflectance is given by `color'
             //   * the variable `alpha' is already provided for you
+        }
+        Color getAlbedo(const Point2 &uv, const Vector &wo) const 
+        {
+            return color;
         }
     };
 
@@ -120,6 +128,15 @@ namespace lightwave
             m_roughness = properties.get<Texture>("roughness");
             m_metallic = properties.get<Texture>("metallic");
             m_specular = properties.get<Texture>("specular");
+        }
+        Color getAlbedo(const Point2 &uv, const Vector &wo) const {
+            const auto combination = combine(uv, wo);
+            Color diffuse_sample = combination.diffuse.getAlbedo(uv, wo);
+            Color metallic_sample = combination.metallic.getAlbedo(uv, wo);
+            float prob = combination.diffuseSelectionProb;
+
+            return diffuse_sample*prob + metallic_sample*(1-prob);
+
         }
 
         BsdfEval evaluate(const Point2 &uv, const Vector &wo,
