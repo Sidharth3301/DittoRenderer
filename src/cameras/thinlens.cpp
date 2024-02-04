@@ -17,20 +17,21 @@ class ThinLens : public Camera {
     Vector origin;
     float scale_x;
     float scale_y;
-    string fovAxis;
     float m_apertureRadius;
     float focal_length;
+    string fovAxis;
 
 public:
     ThinLens(const Properties &properties)
     : Camera(properties) {
-        // NOT_IMPLEMENTED
-        origin = Vector(0.f, 0.f, 0.f);
+         m_apertureRadius = properties.get<float>("radius");
+        focal_length = properties.get<float>("f");
+        scale_x = m_resolution.x();
+        scale_y = m_resolution.y();
+       origin = Vector(0.f, 0.f, 0.f);
         float fov = properties.get<float>("fov");
         fovAxis = properties.get<string>("fovAxis");
-        m_apertureRadius = properties.get<float>("apartureRadius");
-        focal_length = properties.get<float>("f");
-
+        
         if (fovAxis == "x")
         {
             float aspect_ratio = (float)m_resolution.x()/(float)m_resolution.y();
@@ -44,18 +45,9 @@ public:
             scale_y = tan(Deg2Rad*(fov/2.f));
             scale_x = scale_y/aspect_ratio;
         }
-          /* World-space aperture radius */
-
-        if (m_apertureRadius == 0) {
-            m_apertureRadius = Epsilon;
-        }
-        // hints:
-        // * precompute any expensive operations here (most importantly trigonometric functions)
-        // * use m_resolution to find the aspect ratio of the image
     }
 
     CameraSample sample(const Point2 &normalized, Sampler &rng) const override 
-        // NOT_IMPLEMENTED
        {
             
         //   // Sample point on lens using warp function
@@ -70,23 +62,22 @@ public:
         //     Ray ray(origin + Vector(lens_point.x(), lens_point.y(), 0.f), focalPoint - origin);
 
 
-            Point2 lensSample = squareToUniformDiskConcentric(rng.next2D()) * m_apertureRadius;
+            Point2 lensSample = squareToUniformDiskConcentric(rng.next2D());
 
-            Vector lensPoint = Vector(lensSample.x(), lensSample.y(), 0.0f);
+            Point lensPoint = Point(lensSample.x()*m_apertureRadius, lensSample.y()*m_apertureRadius, 0.0f);
 
             Vector direction = Vector(normalized.x() * scale_x, normalized.y() * scale_y, 1.0f);
+            // Vector org_pl_focus = Vector(normalized)
             direction = direction.normalized();
-
-            Vector focalPoint = origin + direction * focal_length;
-
-            Ray ray = Ray(origin + lensPoint, (focalPoint - (origin + lensPoint)).normalized());
-
-
-
+            float ft = focal_length/direction.z();
+            Point pFocus = origin+ft*direction;
+            Ray final;
+            final.origin = lensPoint;
+            final.direction = (pFocus - final.origin).normalized();
            // Ray ray = Ray(origin, Vector(normalized.x()*scale_x, normalized.y()*scale_y, 1.f));
             
             return CameraSample{
-                .ray = m_transform->apply(ray.normalized()),
+                .ray = m_transform->apply(final),
                 .weight = Color(1.0f)};
         
         }
