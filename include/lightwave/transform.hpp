@@ -59,6 +59,12 @@ public:
         const Vector4 result = m_inverse * Vector4(vector, 0);
         return Vector(result.x(), result.y(), result.z());
     }
+    /// @brief Applies the transpose of the inverse transform to the given vector.
+
+    Vector adj(const Vector &vector) const {
+        const Vector4 result = m_inverse.transpose() * Vector4(vector, 0);
+        return Vector(result.x(), result.y(), result.z());
+    }
 
     /**
      * @brief Transforms the given ray.

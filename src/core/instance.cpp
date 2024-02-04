@@ -14,7 +14,7 @@ namespace lightwave
             return surf.frame.normal;
         }
         // hint: transform the normal here
-        Vector newNormal = m_transform->inverse(surf.frame.normal)*m_transform->determinant();
+        Vector newNormal = m_transform->adj(surf.frame.normal);
         return newNormal.normalized();
     }
 
@@ -86,7 +86,7 @@ namespace lightwave
 
                 auto normal_rgb = Vector(normal_texture.r(), normal_texture.g(), normal_texture.b());
                 normal_rgb = normal_rgb * 2 - Vector(1, 1, 1);
-                normal_rgb = normal_rgb.x() * its.frame.tangent + normal_rgb.y() * its.frame.bitangent + 5 * normal_rgb.z() * its.frame.normal;
+                normal_rgb = normal_rgb.x() * its.frame.tangent + normal_rgb.y() * its.frame.bitangent + normal_rgb.z() * its.frame.normal;
                 its.frame.normal = normal_rgb;
             }
 
