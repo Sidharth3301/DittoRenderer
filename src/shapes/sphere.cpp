@@ -68,8 +68,8 @@ namespace lightwave
             auto hitPoint = o+t0*d;
             if (its.alphaMasking)
             {
-                Point2 uv = sphere_uv_coord(hitPoint).normalized();
-                if (its.alphaMasking->scalar(uv) < rng.next())
+                auto uv = Vector2(sphere_uv_coord(hitPoint)).normalized();
+                if (its.alphaMasking->scalar(Point2(uv)) < rng.next())
                 {
                     return false;
                 }
