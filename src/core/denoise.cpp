@@ -1,7 +1,7 @@
 /**
  * @brief Contains the denoise interface.
  */
-
+#ifdef LW_WITH_OIDN
 #include <lightwave/core.hpp>
 #include <lightwave/color.hpp>
 #include <lightwave/math.hpp>
@@ -87,3 +87,4 @@ namespace lightwave
 
 }
 REGISTER_POSTPROCESS(Denoise, "denoise")
+#endif 
